@@ -13,6 +13,7 @@ import EnvironmentTest from './components/Services/EnvironmentTest';
 import PDFToHTMLTest from './components/Test/PDFToHTMLTest';
 import SemanticPDFConverter from './components/Test/SemanticPDFConverter';
 import HybridPDFConverter from './components/Test/HybridPDFConverter';
+import GuidedPresentation from './components/Test/GuidedPresentation';
 import './App.css';
 
 /**
@@ -33,7 +34,7 @@ function App() {
   const [presentationMode, setPresentationMode] = useState('video'); // 'video', 'powerpoint', or 'pdf'
   const [pdfFile, setPdfFile] = useState(null);
   const [showTestPage, setShowTestPage] = useState(false);
-  const [testPageType, setTestPageType] = useState('hybrid'); // 'layout', 'semantic', or 'hybrid'
+  const [testPageType, setTestPageType] = useState('guided'); // 'layout', 'semantic', 'hybrid', or 'guided'
   
   // Refs
   const gptMapperRef = useRef(null);
@@ -414,11 +415,18 @@ function App() {
             >
               Hybrid (Image + Semantic)
             </button>
+            <button 
+              className={testPageType === 'guided' ? 'active' : ''}
+              onClick={() => setTestPageType('guided')}
+            >
+              Guided Presentation
+            </button>
           </div>
         </div>
         {testPageType === 'layout' ? <PDFToHTMLTest /> : 
          testPageType === 'semantic' ? <SemanticPDFConverter /> : 
-         <HybridPDFConverter />}
+         testPageType === 'hybrid' ? <HybridPDFConverter /> :
+         <GuidedPresentation />}
       </div>
     );
   }
