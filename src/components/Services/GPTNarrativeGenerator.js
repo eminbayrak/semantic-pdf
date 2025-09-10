@@ -51,22 +51,30 @@ class GPTNarrativeGenerator {
         messages: [
           {
             role: "system",
-            content: `You are a professional presentation narrator specializing in document walkthroughs. 
-            You create engaging, step-by-step narrative scripts that guide users through important document sections.
-            
+            content: `You are an expert healthcare educator who explains Explanation of Benefits (EOB) documents in very simple language, like you are helping an elderly patient who may not be familiar with medical or insurance terms. 
+
             Your task:
-            1. Analyze the PDF text and identify the most important sections to highlight
-            2. Create a narrative script that explains each section clearly
-            3. Provide specific highlighting instructions with exact text matches
-            4. Ensure the narrative flows logically and professionally
+            1. Read the EOB carefully and create a narration script that explains only the most important information, step by step
+            2. Avoid filler words and focus on these key points:
+               - What medical services or procedures this EOB is about
+               - The total amount the provider charged
+               - How much the insurance company covered
+               - How much was discounted or adjusted
+               - What the patient still has to pay out of pocket (clearly highlight this number)
+               - Any notes about deductibles, copays, or coinsurance, explained in very basic terms
+               - Any follow-up actions the patient should know about
             
-            Focus on key areas like:
-            - Document headers and titles
-            - Important notices ("This is not a bill", "Payment due", etc.)
-            - Financial information (amounts, dates, totals)
-            - Member/patient information
-            - Service details and explanations
-            - Contact information and next steps`
+            3. Write the script in a warm, clear tone
+            4. Avoid insurance jargon - instead of 'allowed amount,' say 'the amount your insurance company agreed to pay'
+            5. Instead of 'patient responsibility,' say 'this is what you will need to pay'
+            6. Break long sentences into short ones
+            7. Think of it like teaching a friend step by step
+            
+            For each step, provide:
+            - A clear title
+            - Simple narrative text
+            - Exact text to highlight from the document
+            - The semantic block ID that matches the highlighted text`
           },
           {
             role: "user",
@@ -107,7 +115,7 @@ class GPTNarrativeGenerator {
       `Block ${block.step}: "${block.text}" (ID: ${block.id})`
     ).join('\n');
 
-    return `Please analyze this PDF document and create a professional narrative script for a guided presentation.
+    return `Please analyze this EOB (Explanation of Benefits) document and create a simple, helpful narrative script for an elderly patient.
 
 PDF TEXT:
 ${pdfText}
@@ -117,29 +125,39 @@ ${blockTexts}
 
 Please provide a JSON response with the following structure:
 {
-  "title": "Document Title",
-  "introduction": "Brief introduction to the document",
+  "title": "Understanding Your Explanation of Benefits",
+  "introduction": "Brief, warm introduction explaining what an EOB is",
   "steps": [
     {
       "stepNumber": 1,
-      "title": "Step Title",
-      "narrative": "What to say during this step",
+      "title": "What This EOB Is About",
+      "narrative": "Simple explanation of the medical services in very basic terms",
       "highlightText": "Exact text to highlight from the PDF",
       "highlightId": "semantic-block-id-to-highlight",
-      "duration": 5,
-      "importance": 0.9
+      "duration": 6,
+      "importance": 0.95
     }
   ],
-  "conclusion": "Brief conclusion"
+  "conclusion": "Warm conclusion with next steps"
 }
 
 Requirements:
-1. Identify 5-8 most important sections to highlight
-2. Use exact text matches from the PDF for highlighting
-3. Match highlightText to actual text in the semantic blocks
-4. Provide engaging, professional narration
-5. Keep each step concise (3-5 seconds of speech)
-6. Focus on areas that would be most confusing or important to users
+1. Focus on the 6-8 most important EOB sections:
+   - "This is not a bill" notice
+   - Member/patient information
+   - Service dates and descriptions
+   - Provider charges (what the doctor billed)
+   - Insurance payments (what insurance covered)
+   - Patient responsibility (what you need to pay)
+   - Deductible, copay, or coinsurance information
+   - Contact information for questions
+
+2. Use simple, warm language - avoid insurance jargon
+3. Use exact text matches from the PDF for highlighting
+4. Match highlightText to actual text in the semantic blocks
+5. Each step should be 5-7 seconds of speech
+6. Focus especially on financial amounts and what the patient owes
+7. Explain everything like you're talking to a friend who's never seen an EOB before
 7. Use the semantic block IDs provided above for targeting
 
 Please respond with valid JSON only.`;

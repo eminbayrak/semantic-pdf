@@ -29,6 +29,7 @@ const GuidedPresentation = () => {
   const [audioData, setAudioData] = useState(null);
   const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
   const [audioError, setAudioError] = useState(null);
+  const [currentFile, setCurrentFile] = useState(null);
 
   // Handle file selection
   const handleFileSelect = async (event) => {
@@ -43,6 +44,7 @@ const GuidedPresentation = () => {
       setIsPlaying(false);
       setNarrativeScript(null);
       setAudioData(null);
+      setCurrentFile(file);
 
       const arrayBuffer = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -52,7 +54,7 @@ const GuidedPresentation = () => {
       setCurrentPage(1);
       
       // Load first page
-      await loadPage(pdf, 1);
+      await loadPage(pdf, 1, file);
       
     } catch (err) {
       console.error('Error loading PDF:', err);
@@ -63,7 +65,7 @@ const GuidedPresentation = () => {
   };
 
   // Load specific page and generate presentation
-  const loadPage = async (pdf, pageNumber) => {
+  const loadPage = async (pdf, pageNumber, file) => {
     try {
       const page = await pdf.getPage(pageNumber);
       const viewport = page.getViewport({ scale });
@@ -82,19 +84,44 @@ const GuidedPresentation = () => {
       
       await page.render(renderContext).promise;
       
-      // Extract text content for semantic analysis
-      const textContent = await page.getTextContent();
+      // NEW APPROACH: Use pdf2htmlEX HTML as source of truth
+      // Convert PDF to HTML using pdf2htmlEX
+      const htmlData = await convertPDFToHTML(file);
       
-      // Generate semantic data
-      const semanticBlocks = generateSemanticBlocks(textContent, viewport);
-      setSemanticData(semanticBlocks);
+      // Parse HTML elements with coordinates
+      const htmlElements = parseHTMLElements(htmlData);
+      setSemanticData(htmlElements); // Store for debugging
       
       // Extract PDF text for GPT-4o analysis
       const pdfText = await extractPDFText(pdf, pageNumber);
-      console.log('📄 Extracted PDF text:', pdfText.substring(0, 200) + '...');
+      // console.log('📄 Extracted PDF text:', pdfText.substring(0, 200) + '...');
       
       // Generate GPT-4o narrative script
-      const generatedNarrative = await generateNarrativeScript(pdfText, semanticBlocks);
+      const generatedNarrative = await generateNarrativeScript(pdfText, htmlElements);
+      
+      console.log('🎬 GPT-4o NARRATION RESULT:');
+      if (generatedNarrative && generatedNarrative.steps) {
+        console.log(`Generated ${generatedNarrative.steps.length} narration steps`);
+        generatedNarrative.steps.forEach((step, i) => {
+          console.log(`Step ${i + 1}:`);
+          console.log(`  Title: "${step.title}"`);
+          console.log(`  Narrative: "${step.narrative}"`);
+          console.log(`  Highlight Text: "${step.highlightText || 'N/A'}"`);
+          console.log(`  Highlight ID: "${step.highlightId || 'N/A'}"`);
+        });
+      } else {
+        console.log('❌ No narration generated');
+      }
+      
+      // ALIGNMENT STEP: Align HTML elements with narration sections
+      let alignedHighlights = [];
+      if (generatedNarrative && generatedNarrative.steps) {
+        alignedHighlights = alignHTMLElementsWithNarration(htmlElements, generatedNarrative.steps);
+        console.log('🎯 Using aligned highlights:', alignedHighlights.length);
+        console.log('Highlights needing review:', alignedHighlights.filter(h => h.needsReview).length);
+      } else {
+        console.log('⚠️ No narration available, no highlights generated');
+      }
       
       // Generate audio for the narrative script
       let generatedAudio = null;
@@ -102,14 +129,297 @@ const GuidedPresentation = () => {
         generatedAudio = await generateAudioForNarrative(generatedNarrative);
       }
       
-      // Generate presentation HTML with the generated data
-      const html = generatePresentationHTMLWithData(semanticBlocks, viewport, pageNumber, canvas, generatedNarrative, generatedAudio);
+      // Generate presentation HTML with the ALIGNED highlights
+      const html = generatePresentationHTMLWithData(alignedHighlights, viewport, pageNumber, canvas, generatedNarrative, generatedAudio);
       setPresentationHTML(html);
       
     } catch (err) {
       console.error('Error loading page:', err);
       setError(`Failed to load page ${pageNumber}: ${err.message}`);
     }
+  };
+
+  // Convert PDF to HTML using pdf2htmlEX (simulated - in real implementation, this would call pdf2htmlEX)
+  const convertPDFToHTML = async (pdfFile) => {
+    // In a real implementation, this would:
+    // 1. Call pdf2htmlEX to convert PDF to HTML
+    // 2. Return the HTML content with embedded coordinates
+    // For now, we'll simulate this by extracting text from PDF.js and creating HTML-like structure
+    
+    console.log('🔄 Converting PDF to HTML using pdf2htmlEX...');
+    
+    // This is a placeholder - in real implementation, you'd call pdf2htmlEX here
+    // For now, we'll use PDF.js to extract text and create HTML structure
+    const pdf = await pdfjsLib.getDocument(URL.createObjectURL(pdfFile)).promise;
+    const page = await pdf.getPage(1);
+    const textContent = await page.getTextContent();
+    const viewport = page.getViewport({ scale: 1 });
+    
+    // Create HTML-like structure with coordinates
+    const htmlElements = textContent.items.map((item, index) => {
+      const x = item.transform[4];
+      const y = viewport.height - item.transform[5] - item.height;
+      const width = item.width;
+      const height = item.height;
+      const text = item.str.trim();
+      
+      return {
+        id: `element-${index}`,
+        x: x,
+        y: y,
+        width: width,
+        height: height,
+        text: text,
+        fontSize: item.height,
+        fontFamily: item.fontName || 'Arial',
+        className: 'text-element',
+        style: `position: absolute; left: ${x}px; top: ${y}px; width: ${width}px; height: ${height}px; font-size: ${item.height}px; font-family: ${item.fontName || 'Arial'};`
+      };
+    });
+    
+    return {
+      html: htmlElements,
+      viewport: viewport,
+      pageWidth: viewport.width,
+      pageHeight: viewport.height
+    };
+  };
+
+  // Parse HTML elements and extract text with coordinates
+  const parseHTMLElements = (htmlData) => {
+    console.log('📄 PARSING HTML ELEMENTS:');
+    
+    const elements = htmlData.html.map(element => ({
+      id: element.id,
+      x: element.x,
+      y: element.y,
+      width: element.width,
+      height: element.height,
+      text: element.text,
+      fontSize: element.fontSize,
+      fontFamily: element.fontFamily,
+      className: element.className
+    }));
+    
+    console.log(`Found ${elements.length} HTML elements`);
+    console.log('📋 SAMPLE ELEMENTS:');
+    elements.slice(0, 10).forEach((el, i) => {
+      console.log(`${i + 1}. ID: ${el.id}`);
+      console.log(`   Text: "${el.text}"`);
+      console.log(`   Position: (${el.x}, ${el.y}) ${el.width}x${el.height}`);
+      console.log(`   Font: ${el.fontSize}px ${el.fontFamily}`);
+    });
+    
+    return elements;
+  };
+
+  // Normalize text for matching (lowercase, remove punctuation, collapse spaces)
+  const normalizeText = (text) => {
+    return text
+      .toLowerCase()
+      .replace(/[^\w\s]/g, ' ')  // Replace punctuation with spaces
+      .replace(/\s+/g, ' ')      // Collapse multiple spaces
+      .trim();
+  };
+
+  // Calculate similarity between two texts using fuzzy matching
+  const calculateTextSimilarity = (text1, text2) => {
+    const normalized1 = normalizeText(text1);
+    const normalized2 = normalizeText(text2);
+    
+    // Exact match
+    if (normalized1 === normalized2) return 1.0;
+    
+    // Empty text gets 0 similarity
+    if (normalized1.length === 0 || normalized2.length === 0) return 0;
+    
+    // Check for exact substring matches first
+    if (normalized1.includes(normalized2) || normalized2.includes(normalized1)) {
+      return 0.9; // High score for substring matches
+    }
+    
+    const words1 = normalized1.split(' ').filter(w => w.length > 1);
+    const words2 = normalized2.split(' ').filter(w => w.length > 1);
+    
+    if (words1.length === 0 || words2.length === 0) return 0;
+    
+    // Calculate intersection of words
+    const intersection = words1.filter(word => words2.includes(word));
+    const union = [...new Set([...words1, ...words2])];
+    
+    // Jaccard similarity
+    const jaccard = intersection.length / union.length;
+    
+    // Boost score if the shorter text is mostly contained in the longer text
+    const shorter = words1.length < words2.length ? words1 : words2;
+    const longer = words1.length >= words2.length ? words1 : words2;
+    const containmentScore = shorter.filter(word => longer.includes(word)).length / shorter.length;
+    
+    return Math.max(jaccard, containmentScore * 0.8);
+  };
+
+  // Merge nearby HTML elements into one bounding box
+  const mergeHTMLElements = (elements) => {
+    if (elements.length === 0) return null;
+    if (elements.length === 1) return elements[0];
+    
+    const minX = Math.min(...elements.map(e => e.x));
+    const minY = Math.min(...elements.map(e => e.y));
+    const maxX = Math.max(...elements.map(e => e.x + e.width));
+    const maxY = Math.max(...elements.map(e => e.y + e.height));
+    
+    return {
+      id: `merged-${elements.map(e => e.id).join('-')}`,
+      x: minX,
+      y: minY,
+      width: maxX - minX,
+      height: maxY - minY,
+      text: elements.map(e => e.text).join(' '),
+      fontSize: Math.max(...elements.map(e => e.fontSize)),
+      fontFamily: elements[0].fontFamily,
+      elements: elements,
+      isMerged: true
+    };
+  };
+
+  // Align HTML elements with narration sections
+  const alignHTMLElementsWithNarration = (htmlElements, narrationSteps) => {
+    if (!narrationSteps || narrationSteps.length === 0) {
+      console.log('⚠️ No narration steps provided');
+      return [];
+    }
+
+    console.log('🎯 HIGHLIGHT ALIGNMENT DEBUG');
+    console.log('Narration steps:', narrationSteps.length);
+    console.log('HTML elements:', htmlElements.length);
+
+    const alignedHighlights = [];
+    const usedElementIds = new Set();
+
+    // For each narration step, find the best matching HTML element(s)
+    narrationSteps.forEach((step, stepIndex) => {
+      const stepText = step.highlightText || step.narrative || '';
+      const normalizedStepText = normalizeText(stepText);
+      
+      console.log(`\n🔍 STEP ${stepIndex + 1} ANALYSIS:`);
+      console.log(`Narration: "${stepText}"`);
+      console.log(`Highlight Text: "${step.highlightText || 'N/A'}"`);
+      console.log(`Normalized: "${normalizedStepText}"`);
+
+      // Find all elements that haven't been used yet
+      const availableElements = htmlElements.filter(element => !usedElementIds.has(element.id));
+      console.log(`Available elements: ${availableElements.length}`);
+      
+      // Calculate similarity scores for all available elements
+      const elementScores = availableElements.map(element => ({
+        element,
+        similarity: calculateTextSimilarity(stepText, element.text),
+        keywordMatch: normalizedStepText.split(' ').some(word => 
+          word.length > 2 && normalizeText(element.text).includes(word)
+        ),
+        exactMatch: normalizeText(element.text).includes(normalizedStepText) || 
+                   normalizedStepText.includes(normalizeText(element.text))
+      }));
+
+      // Sort by similarity score (highest first)
+      elementScores.sort((a, b) => {
+        if (a.exactMatch && !b.exactMatch) return -1;
+        if (!a.exactMatch && b.exactMatch) return 1;
+        if (a.keywordMatch && !b.keywordMatch) return -1;
+        if (!a.keywordMatch && b.keywordMatch) return 1;
+        return b.similarity - a.similarity;
+      });
+
+      console.log('📊 TOP 5 MATCHES:');
+      elementScores.slice(0, 5).forEach((es, i) => {
+        console.log(`${i + 1}. ID: ${es.element.id}`);
+        console.log(`   Text: "${es.element.text}"`);
+        console.log(`   Coords: (${es.element.x}, ${es.element.y}) ${es.element.width}x${es.element.height}`);
+        console.log(`   Similarity: ${es.similarity.toFixed(3)}, Keywords: ${es.keywordMatch}, Exact: ${es.exactMatch}`);
+      });
+
+      // Find the best match(es) - be much more selective
+      const bestMatch = elementScores[0];
+      
+      // Only proceed if we have a good match and it's not an empty element
+      if (bestMatch && 
+          bestMatch.element.text.trim().length > 0 && // Not empty
+          (bestMatch.similarity > 0.5 || bestMatch.exactMatch) && // Higher threshold
+          bestMatch.element.width > 0 && bestMatch.element.height > 0) { // Has actual size
+        
+        // Only merge elements that are very close to the best match
+        const similarElements = elementScores.filter(es => 
+          es.element.text.trim().length > 0 && // Not empty
+          es.element.width > 0 && es.element.height > 0 && // Has actual size
+          (es.similarity > 0.7 || es.exactMatch) && // Much higher threshold
+          Math.abs(es.element.y - bestMatch.element.y) < 50 && // Close vertically
+          Math.abs(es.element.x - bestMatch.element.x) < 200 // Close horizontally
+        ).map(es => es.element);
+
+        console.log(`✅ FOUND ${similarElements.length} MATCHING ELEMENTS (filtered from ${elementScores.length})`);
+
+        // If we have too many elements, just use the best one
+        const elementsToMerge = similarElements.length > 5 ? [bestMatch.element] : similarElements;
+        
+        // Merge similar elements
+        const mergedElement = mergeHTMLElements(elementsToMerge);
+        if (mergedElement) {
+          // Create highlight object
+          const highlight = {
+            id: `highlight-${stepIndex}`,
+            step: stepIndex + 1,
+            x: mergedElement.x,
+            y: mergedElement.y,
+            width: mergedElement.width,
+            height: mergedElement.height,
+            text: mergedElement.text,
+            narrationText: stepText,
+            narrative: step.narrative,
+            fontSize: mergedElement.fontSize,
+            fontFamily: mergedElement.fontFamily,
+            isMerged: mergedElement.isMerged,
+            elements: mergedElement.elements || [mergedElement]
+          };
+          
+          console.log(`🎯 CREATED HIGHLIGHT:`);
+          console.log(`   Position: (${highlight.x}, ${highlight.y}) ${highlight.width}x${highlight.height}`);
+          console.log(`   Text: "${highlight.text}"`);
+          
+          alignedHighlights.push(highlight);
+          
+          // Mark all merged elements as used
+          elementsToMerge.forEach(element => usedElementIds.add(element.id));
+        }
+      } else {
+        console.log(`❌ NO MATCH FOUND - Creating placeholder`);
+        // Create a "needs review" highlight
+        const needsReviewHighlight = {
+          id: `needs-review-${stepIndex}`,
+          step: stepIndex + 1,
+          x: 50,
+          y: 50 + (stepIndex * 100),
+          width: 200,
+          height: 30,
+          text: stepText,
+          narrationText: stepText,
+          narrative: step.narrative,
+          fontSize: 12,
+          fontFamily: 'Arial',
+          isMerged: false,
+          elements: [],
+          needsReview: true
+        };
+        alignedHighlights.push(needsReviewHighlight);
+      }
+    });
+
+    console.log(`\n🎯 FINAL ALIGNMENT RESULT:`);
+    console.log(`Total highlights: ${alignedHighlights.length}`);
+    alignedHighlights.forEach((h, i) => {
+      console.log(`${i + 1}. Step ${h.step}: (${h.x}, ${h.y}) ${h.width}x${h.height} - "${h.text.substring(0, 30)}..." ${h.needsReview ? '[NEEDS REVIEW]' : ''}`);
+    });
+
+    return alignedHighlights;
   };
 
   // Generate semantic blocks from text content
@@ -174,15 +484,15 @@ const GuidedPresentation = () => {
       blocks.push(currentBlock);
     }
     
-    // Filter to only include important sections for presentation
-    const importantBlocks = blocks.filter(block => block.importance > 0.5);
+    // Filter to include EOB-important sections (lower threshold for EOB content)
+    const importantBlocks = blocks.filter(block => block.importance > 0.3);
     
-    // Reorder by importance and position
+    // Reorder by importance and position (top to bottom)
     importantBlocks.sort((a, b) => {
       if (b.importance !== a.importance) {
         return b.importance - a.importance;
       }
-      return a.y - b.y;
+      return a.y - b.y; // Top to bottom order
     });
     
     // Reassign step numbers
@@ -190,38 +500,76 @@ const GuidedPresentation = () => {
       block.step = index + 1;
     });
     
+    console.log('EOB-focused semantic blocks:', importantBlocks.map(b => ({
+      id: b.id,
+      text: b.text.substring(0, 50) + '...',
+      importance: b.importance
+    })));
+    
     return importantBlocks;
   };
 
-  // Calculate importance score for text content
+  // Calculate importance score for EOB content
   const calculateImportance = (text) => {
     const lowerText = text.toLowerCase();
     let score = 0;
     
-    const highImportance = [
-      'this is not a bill', 'explanation of benefits', 'member information',
-      'patient name', 'subscriber number', 'total claim cost', 'what you owe',
-      'paid by insurer', 'provider charges', 'allowed charges', 'co pay',
-      'deductible', 'coinsurance', 'customer service', 'phone number',
-      'appeals', 'coverage', 'payment', 'claim number', 'date of service',
-      'service description'
+    // EOB-specific high importance keywords
+    const eobHighImportance = [
+      'this is not a bill',
+      'explanation of benefits',
+      'member name',
+      'patient name',
+      'subscriber number',
+      'what you owe',
+      'patient responsibility',
+      'amount due',
+      'total amount',
+      'provider charges',
+      'allowed charges',
+      'paid by insurer',
+      'insurance payment',
+      'deductible',
+      'copay',
+      'coinsurance',
+      'service date',
+      'date of service',
+      'claim number',
+      'customer service',
+      'phone number',
+      'contact',
+      'appeals',
+      'coverage'
     ];
     
-    highImportance.forEach(keyword => {
+    // Check for EOB-specific content
+    eobHighImportance.forEach(keyword => {
       if (lowerText.includes(keyword)) {
-        score += 3;
+        score += 4; // Higher weight for EOB content
       }
     });
     
-    if (lowerText.match(/\$\d+/) || lowerText.match(/total|cost|charge|payment|owe/)) {
-      score += 2;
+    // Financial amounts - very important for EOB
+    if (lowerText.match(/\$\d+/) || lowerText.match(/\$\d+\.\d{2}/)) {
+      score += 3;
     }
     
+    // Phone numbers and contact info
     if (lowerText.match(/\d{3}-\d{3}-\d{4}/) || lowerText.match(/phone|call|contact/)) {
       score += 2;
     }
     
-    return Math.min(score / 10, 1);
+    // Dates and service information
+    if (lowerText.match(/\d{1,2}\/\d{1,2}\/\d{4}/) || lowerText.match(/service|procedure|visit/)) {
+      score += 2;
+    }
+    
+    // Table headers and labels
+    if (lowerText.match(/^[a-z\s]+:$/) || lowerText.match(/^[a-z\s]+$/)) {
+      score += 1;
+    }
+    
+    return Math.min(score / 15, 1); // Adjusted divisor for higher scores
   };
 
   // Generate meaningful IDs based on content
@@ -316,7 +664,7 @@ const GuidedPresentation = () => {
   };
 
   // Generate presentation HTML with passed data
-  const generatePresentationHTMLWithData = (semanticBlocks, viewport, pageNumber, canvas, narrativeData, audioData) => {
+  const generatePresentationHTMLWithData = (alignedHighlights, viewport, pageNumber, canvas, narrativeData, audioData) => {
     const imageDataUrl = canvas.toDataURL('image/png');
     const canvasWidth = canvas.width;
     const canvasHeight = canvas.height;
@@ -389,7 +737,10 @@ const GuidedPresentation = () => {
         .pdf-background { width: ${canvasWidth}px; height: ${canvasHeight}px; z-index: 1; }
         .highlight-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: ${canvasWidth}px; height: ${canvasHeight}px; z-index: 2; pointer-events: none; }
         .highlight-element { position: absolute; border: 4px solid #ffd700; border-radius: 12px; background: transparent; opacity: 0; transform: scale(0.8); transition: all 0.5s; pointer-events: none; min-width: 120px; min-height: 60px; }
+        .highlight-element.needs-review { border-color: #ff6b6b; background: rgba(255, 107, 107, 0.1); }
         .highlight-label { position: absolute; left: -50px; top: 50%; transform: translateY(-50%); background: #ffd700; color: #1a1a1a; font-weight: bold; font-size: 18px; width: 40px; height: 40px; border-radius: 50%; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); text-align: center; display: flex; align-items: center; justify-content: center; border: 3px solid #fff; line-height: 1; }
+        .highlight-element.needs-review .highlight-label { background: #ff6b6b; }
+        .review-indicator { position: absolute; top: -10px; right: -10px; background: #ff6b6b; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; }
         .highlight-element.active { opacity: 1; transform: scale(1); }
         .highlight-element.prev { opacity: 0; transform: scale(0.8); }
         .controls { width: 300px; background: #2a2a2a; padding: 20px; overflow-y: auto; }
@@ -411,8 +762,13 @@ const GuidedPresentation = () => {
         .element-item { padding: 10px; border: 1px solid #444; margin-bottom: 5px; border-radius: 4px; cursor: pointer; transition: all 0.3s; }
         .element-item:hover { background: #444; }
         .element-item.active { background: #444; border-left: 4px solid #ffd700; }
+        .element-item.needs-review { border-color: #ff6b6b; background: rgba(255, 107, 107, 0.1); }
+        .element-item.needs-review:hover { background: rgba(255, 107, 107, 0.2); }
+        .element-item.needs-review.active { border-left-color: #ff6b6b; }
         .element-id { font-weight: bold; color: #ffd700; font-size: 12px; }
+        .element-item.needs-review .element-id { color: #ff6b6b; }
         .element-text { color: #ccc; font-size: 11px; margin-top: 5px; }
+        .review-warning { color: #ff6b6b; font-size: 10px; margin-top: 5px; font-style: italic; }
     </style>
 </head>
 <body>
@@ -420,14 +776,25 @@ const GuidedPresentation = () => {
         <div class="pdf-viewer">
             <img src="${imageDataUrl}" alt="PDF Page ${pageNumber}" class="pdf-background">
             <div class="highlight-overlay" id="highlightOverlay">
-                ${semanticBlocks.map((block, index) => {
-                    const x = block.x * scaleX;
-                    const y = block.y * scaleY;
-                    const width = block.width * scaleX;
-                    const height = block.height * scaleY;
+                ${alignedHighlights.map((highlight, index) => {
+                    const x = highlight.x * scaleX;
+                    const y = highlight.y * scaleY;
+                    const width = highlight.width * scaleX;
+                    const height = highlight.height * scaleY;
+                    const stepNumber = highlight.step;
+                    const needsReview = highlight.needsReview ? 'needs-review' : '';
+                    const reviewText = highlight.needsReview ? ' (Needs Review)' : '';
+                    
+                    console.log(`🎯 HIGHLIGHT ${stepNumber} POSITIONING:`);
+                    console.log(`   Original: (${highlight.x}, ${highlight.y}) ${highlight.width}x${highlight.height}`);
+                    console.log(`   Scaled: (${x}, ${y}) ${width}x${height}`);
+                    console.log(`   Scale factors: ${scaleX}x, ${scaleY}y`);
+                    console.log(`   Text: "${highlight.text}"`);
+                    
                     return `
-                        <div class="highlight-element" id="highlight-${index}" style="left: ${x}px; top: ${y}px; width: ${width}px; height: ${height}px;">
-                            <div class="highlight-label">${index + 1}</div>
+                        <div class="highlight-element ${needsReview}" id="highlight-${stepNumber - 1}" data-step="${stepNumber - 1}" style="left: ${x}px; top: ${y}px; width: ${width}px; height: ${height}px;">
+                            <div class="highlight-label">${stepNumber}</div>
+                            ${highlight.needsReview ? '<div class="review-indicator">⚠️</div>' : ''}
                         </div>
                     `;
                 }).join('')}
@@ -454,10 +821,11 @@ const GuidedPresentation = () => {
             </div>
             
             <div class="element-list" id="elementList">
-                ${semanticBlocks.map((block, index) => `
-                    <div class="element-item" onclick="goToStep(${index})">
-                        <div class="element-id">${block.id}</div>
-                        <div class="element-text">${block.text.substring(0, 100)}...</div>
+                ${alignedHighlights.map((highlight, index) => `
+                    <div class="element-item ${highlight.needsReview ? 'needs-review' : ''}" onclick="goToStep(${index})">
+                        <div class="element-id">Step ${highlight.step}${highlight.needsReview ? ' (Needs Review)' : ''}</div>
+                        <div class="element-text">${highlight.narrationText || highlight.text}</div>
+                        ${highlight.needsReview ? '<div class="review-warning">⚠️ No matching content found</div>' : ''}
                     </div>
                 `).join('')}
             </div>
@@ -465,7 +833,7 @@ const GuidedPresentation = () => {
     </div>
 
     <script>
-        const elements = ${JSON.stringify(semanticBlocks)};
+        const elements = ${JSON.stringify(alignedHighlights)};
         const audioData = ${JSON.stringify(audioDataForHTML)};
         const narrativeScript = ${JSON.stringify(narrativeData)};
         const totalSteps = elements.length;
@@ -494,12 +862,13 @@ const GuidedPresentation = () => {
             const progress = ((step + 1) / totalSteps) * 100;
             document.getElementById('progressFill').style.width = progress + '%';
             
-            // Update highlights
-            document.querySelectorAll('.highlight-element').forEach((el, index) => {
+            // Update highlights using data-step attribute for proper narration order
+            document.querySelectorAll('.highlight-element').forEach((el) => {
                 el.classList.remove('active', 'prev');
-                if (index === step) {
+                const elementStep = parseInt(el.getAttribute('data-step')) || 0;
+                if (elementStep === step) {
                     el.classList.add('active');
-                } else if (index < step) {
+                } else if (elementStep < step) {
                     el.classList.add('prev');
                 }
             });
@@ -805,7 +1174,10 @@ const GuidedPresentation = () => {
         .pdf-background { width: ${canvasWidth}px; height: ${canvasHeight}px; z-index: 1; }
         .highlight-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: ${canvasWidth}px; height: ${canvasHeight}px; z-index: 2; pointer-events: none; }
         .highlight-element { position: absolute; border: 4px solid #ffd700; border-radius: 12px; background: transparent; opacity: 0; transform: scale(0.8); transition: all 0.5s; pointer-events: none; min-width: 120px; min-height: 60px; }
+        .highlight-element.needs-review { border-color: #ff6b6b; background: rgba(255, 107, 107, 0.1); }
         .highlight-label { position: absolute; left: -50px; top: 50%; transform: translateY(-50%); background: #ffd700; color: #1a1a1a; font-weight: bold; font-size: 18px; width: 40px; height: 40px; border-radius: 50%; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); text-align: center; display: flex; align-items: center; justify-content: center; border: 3px solid #fff; line-height: 1; }
+        .highlight-element.needs-review .highlight-label { background: #ff6b6b; }
+        .review-indicator { position: absolute; top: -10px; right: -10px; background: #ff6b6b; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; }
         .highlight-element.active { opacity: 1; transform: scale(1); }
         .highlight-element.prev { opacity: 0; transform: scale(0.8); }
         .controls { width: 300px; background: #2a2a2a; padding: 20px; overflow-y: auto; }
@@ -916,12 +1288,13 @@ const GuidedPresentation = () => {
             const progress = ((step + 1) / totalSteps) * 100;
             document.getElementById('progressFill').style.width = progress + '%';
             
-            // Update highlights
-            document.querySelectorAll('.highlight-element').forEach((el, index) => {
+            // Update highlights using data-step attribute for proper narration order
+            document.querySelectorAll('.highlight-element').forEach((el) => {
                 el.classList.remove('active', 'prev');
-                if (index === step) {
+                const elementStep = parseInt(el.getAttribute('data-step')) || 0;
+                if (elementStep === step) {
                     el.classList.add('active');
-                } else if (index < step) {
+                } else if (elementStep < step) {
                     el.classList.add('prev');
                 }
             });
@@ -1155,17 +1528,17 @@ const GuidedPresentation = () => {
 
   // Handle page navigation
   const goToPage = (pageNumber) => {
-    if (pageNumber >= 1 && pageNumber <= totalPages && pdfDocument) {
+    if (pageNumber >= 1 && pageNumber <= totalPages && pdfDocument && currentFile) {
       setCurrentPage(pageNumber);
-      loadPage(pdfDocument, pageNumber);
+      loadPage(pdfDocument, pageNumber, currentFile);
     }
   };
 
   // Handle scale change
   const handleScaleChange = (newScale) => {
     setScale(newScale);
-    if (pdfDocument) {
-      loadPage(pdfDocument, currentPage);
+    if (pdfDocument && currentFile) {
+      loadPage(pdfDocument, currentPage, currentFile);
     }
   };
 
@@ -1188,17 +1561,21 @@ const GuidedPresentation = () => {
     <div className="guided-presentation-container">
       <div className="presentation-header">
         <h2>Guided Presentation Creator</h2>
-        <p>Create Guide.com-style step-by-step highlighting presentations</p>
+        <p>Upload a PDF to create an interactive, narrated presentation with AI-powered highlighting</p>
       </div>
 
       <div className="presentation-controls">
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".pdf"
-          onChange={handleFileSelect}
-          className="file-input"
-        />
+        {/* File Upload */}
+        <div className="upload-section">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf"
+            onChange={handleFileSelect}
+            className="file-input"
+            placeholder="Choose PDF file or drag and drop here"
+          />
+        </div>
 
         {/* Status Messages */}
         {isGeneratingNarrative && (
@@ -1251,11 +1628,11 @@ const GuidedPresentation = () => {
         
         {/* Manual Audio Generation Button */}
         {narrativeScript && !audioData && (
-          <div className="status-message">
+          <div className="action-section">
             <button
               onClick={generateAudioForNarrative}
               disabled={isGeneratingAudio}
-              className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-medium"
+              className="action-button generate-audio"
             >
               {isGeneratingAudio ? 'Generating Audio...' : '🎵 Generate Audio for Presentation'}
             </button>
@@ -1264,89 +1641,81 @@ const GuidedPresentation = () => {
         
         {/* Regenerate HTML Button */}
         {audioData && semanticData && (
-          <div className="status-message">
+          <div className="action-section">
             <button
               onClick={() => {
-                if (pdfDocument) {
-                  loadPage(pdfDocument, currentPage);
+                if (pdfDocument && currentFile) {
+                  loadPage(pdfDocument, currentPage, currentFile);
                 }
               }}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium"
+              className="action-button regenerate-html"
             >
               🔄 Regenerate HTML with Audio
             </button>
           </div>
         )}
         
+        {/* PDF Viewer and Controls */}
         {pdfDocument && (
-          <div className="page-controls">
-            <button 
-              onClick={() => goToPage(currentPage - 1)}
-              disabled={currentPage <= 1}
-            >
-              Previous Page
-            </button>
-            
-            <span className="page-info">
-              Page {currentPage} of {totalPages}
-            </span>
-            
-            <button 
-              onClick={() => goToPage(currentPage + 1)}
-              disabled={currentPage >= totalPages}
-            >
-              Next Page
-            </button>
-            
-            <div className="scale-controls">
-              <label>Scale: </label>
-              <input
-                type="range"
-                min="0.5"
-                max="3"
-                step="0.1"
-                value={scale}
-                onChange={(e) => handleScaleChange(parseFloat(e.target.value))}
-              />
-              <span>{scale.toFixed(1)}x</span>
+          <>
+            <div className="page-controls">
+              <button 
+                onClick={() => goToPage(currentPage - 1)}
+                disabled={currentPage <= 1}
+                className="page-button"
+              >
+                ← Previous
+              </button>
+              
+              <span className="page-info">
+                Page {currentPage} of {totalPages}
+              </span>
+              
+              <button 
+                onClick={() => goToPage(currentPage + 1)}
+                disabled={currentPage >= totalPages}
+                className="page-button"
+              >
+                Next →
+              </button>
+              
+              <div className="scale-controls">
+                <label>Scale:</label>
+                <input
+                  type="range"
+                  min="0.5"
+                  max="3"
+                  step="0.1"
+                  value={scale}
+                  onChange={(e) => handleScaleChange(parseFloat(e.target.value))}
+                />
+                <span>{scale.toFixed(1)}x</span>
+              </div>
             </div>
-            
-            <button onClick={downloadPresentation} className="download-btn">
-              Download Presentation
-            </button>
-          </div>
+
+            <div className="pdf-viewer">
+              <canvas
+                ref={canvasRef}
+                className="pdf-canvas"
+                style={{ transform: `scale(${scale})` }}
+              />
+            </div>
+          </>
         )}
-      </div>
 
-      {isLoading && (
-        <div className="loading">
-          <div className="spinner"></div>
-          <p>Creating presentation...</p>
-        </div>
-      )}
-
-      {error && (
-        <div className="error">
-          <p>Error: {error}</p>
-        </div>
-      )}
-
-      <div className="presentation-content">
-        <div className="canvas-container">
-          <h3>PDF Preview</h3>
-          <canvas
-            ref={canvasRef}
-            className="pdf-canvas"
-          />
-        </div>
-
+        {/* Download Section */}
         {presentationHTML && (
-          <div className="presentation-container">
-            <h3>Guided Presentation Preview</h3>
-            <div 
-              dangerouslySetInnerHTML={{ __html: presentationHTML }}
-              className="presentation-iframe"
-            />
+          <div className="download-section">
+            <button
+              onClick={downloadPresentation}
+              className="download-button"
+              disabled={!presentationHTML}
+            >
+              📥 Download Presentation HTML
+            </button>
+            <p className="download-info">
+              The downloaded HTML file will include synchronized audio narration and interactive highlighting.
+            </p>
           </div>
         )}
       </div>

@@ -31,7 +31,7 @@ export const checkEnvironmentVariables = () => {
     }
   });
 
-  console.log('Environment Check Results:', results);
+  // console.log('Environment Check Results:', results);
   return results;
 };
 
