@@ -5,6 +5,10 @@ import PDFToHTMLTest from './components/Test/PDFToHTMLTest';
 import SemanticPDFConverter from './components/Test/SemanticPDFConverter';
 import HybridPDFConverter from './components/Test/HybridPDFConverter';
 import GuidedPresentation from './components/Test/GuidedPresentation';
+import PDFCoordinateExtractor from './components/Services/PDFCoordinateExtractor';
+import PDFCoordinateVisualizer from './components/Services/PDFCoordinateVisualizer';
+import PDFTextHighlighter from './components/Services/PDFTextHighlighter';
+import EOBNarrativeGenerator from './components/Services/EOBNarrativeGenerator';
 import './App.css';
 
 /**
@@ -17,7 +21,7 @@ function App() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
-  const [conversionMode, setConversionMode] = useState('guided'); // 'layout', 'semantic', 'hybrid', 'guided'
+  const [conversionMode, setConversionMode] = useState('narrativeGenerator'); // 'layout', 'semantic', 'hybrid', 'guided', 'coordinates', 'visualizer', 'textHighlighter', 'narrativeGenerator'
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   // Check environment variables
@@ -62,6 +66,14 @@ function App() {
   // Render conversion component based on mode
   const renderConversionComponent = () => {
     switch (conversionMode) {
+      case 'visualizer':
+        return <PDFCoordinateVisualizer />;
+      case 'coordinates':
+        return <PDFCoordinateExtractor />;
+      case 'textHighlighter':
+        return <PDFTextHighlighter />;
+      case 'narrativeGenerator':
+        return <EOBNarrativeGenerator />;
       case 'layout':
         return <PDFToHTMLTest />;
       case 'semantic':
@@ -81,8 +93,8 @@ function App() {
       {/* Header */}
       <header className="app-header">
         <div className="header-content">
-          <h1>PDF to Guided Presentation</h1>
-          <p>Transform your PDFs into interactive, narrated presentations</p>
+          <h1>PDF Analysis & Presentation System</h1>
+          <p>Extract coordinates, analyze documents, and create interactive presentations</p>
         </div>
         
         {/* Settings Dropdown */}
@@ -107,6 +119,34 @@ function App() {
                 </button>
               </div>
               <div className="settings-options">
+                <button 
+                  className={`option ${conversionMode === 'visualizer' ? 'active' : ''}`}
+                  onClick={() => handleConversionModeChange('visualizer')}
+                >
+                  🎯 PDF Coordinate Visualizer
+                  <span>Visualize PDF with highlight boxes using Azure Document Intelligence coordinates</span>
+                </button>
+                <button 
+                  className={`option ${conversionMode === 'coordinates' ? 'active' : ''}`}
+                  onClick={() => handleConversionModeChange('coordinates')}
+                >
+                  📍 PDF Coordinate Extractor
+                  <span>Extract and log PDF section coordinates using Azure Document Intelligence</span>
+                </button>
+                <button 
+                  className={`option ${conversionMode === 'textHighlighter' ? 'active' : ''}`}
+                  onClick={() => handleConversionModeChange('textHighlighter')}
+                >
+                  🎯 PDF Text Highlighter (PDF.js)
+                  <span>Direct text search and highlighting using PDF.js - much more accurate!</span>
+                </button>
+                <button 
+                  className={`option ${conversionMode === 'narrativeGenerator' ? 'active' : ''}`}
+                  onClick={() => handleConversionModeChange('narrativeGenerator')}
+                >
+                  📖 EOB Narrative Generator
+                  <span>Generate HTML with narrative text and synchronized PDF highlights</span>
+                </button>
                 <button 
                   className={`option ${conversionMode === 'guided' ? 'active' : ''}`}
                   onClick={() => handleConversionModeChange('guided')}

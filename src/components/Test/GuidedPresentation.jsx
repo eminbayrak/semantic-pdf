@@ -94,33 +94,16 @@ const GuidedPresentation = () => {
       
       // Extract PDF text for GPT-4o analysis
       const pdfText = await extractPDFText(pdf, pageNumber);
-      // console.log('📄 Extracted PDF text:', pdfText.substring(0, 200) + '...');
       
       // Generate GPT-4o narrative script
       const generatedNarrative = await generateNarrativeScript(pdfText, htmlElements);
       
-      console.log('🎬 GPT-4o NARRATION RESULT:');
-      if (generatedNarrative && generatedNarrative.steps) {
-        console.log(`Generated ${generatedNarrative.steps.length} narration steps`);
-        generatedNarrative.steps.forEach((step, i) => {
-          console.log(`Step ${i + 1}:`);
-          console.log(`  Title: "${step.title}"`);
-          console.log(`  Narrative: "${step.narrative}"`);
-          console.log(`  Highlight Text: "${step.highlightText || 'N/A'}"`);
-          console.log(`  Highlight ID: "${step.highlightId || 'N/A'}"`);
-        });
-      } else {
-        console.log('❌ No narration generated');
-      }
+      // GPT-4o narration generated
       
       // ALIGNMENT STEP: Align HTML elements with narration sections
       let alignedHighlights = [];
       if (generatedNarrative && generatedNarrative.steps) {
         alignedHighlights = alignHTMLElementsWithNarration(htmlElements, generatedNarrative.steps);
-        console.log('🎯 Using aligned highlights:', alignedHighlights.length);
-        console.log('Highlights needing review:', alignedHighlights.filter(h => h.needsReview).length);
-      } else {
-        console.log('⚠️ No narration available, no highlights generated');
       }
       
       // Generate audio for the narrative script
@@ -146,7 +129,7 @@ const GuidedPresentation = () => {
     // 2. Return the HTML content with embedded coordinates
     // For now, we'll simulate this by extracting text from PDF.js and creating HTML-like structure
     
-    console.log('🔄 Converting PDF to HTML using pdf2htmlEX...');
+    // Converting PDF to HTML using pdf2htmlEX
     
     // This is a placeholder - in real implementation, you'd call pdf2htmlEX here
     // For now, we'll use PDF.js to extract text and create HTML structure
@@ -187,8 +170,6 @@ const GuidedPresentation = () => {
 
   // Parse HTML elements and extract text with coordinates
   const parseHTMLElements = (htmlData) => {
-    console.log('📄 PARSING HTML ELEMENTS:');
-    
     const elements = htmlData.html.map(element => ({
       id: element.id,
       x: element.x,
@@ -200,15 +181,6 @@ const GuidedPresentation = () => {
       fontFamily: element.fontFamily,
       className: element.className
     }));
-    
-    console.log(`Found ${elements.length} HTML elements`);
-    console.log('📋 SAMPLE ELEMENTS:');
-    elements.slice(0, 10).forEach((el, i) => {
-      console.log(`${i + 1}. ID: ${el.id}`);
-      console.log(`   Text: "${el.text}"`);
-      console.log(`   Position: (${el.x}, ${el.y}) ${el.width}x${el.height}`);
-      console.log(`   Font: ${el.fontSize}px ${el.fontFamily}`);
-    });
     
     return elements;
   };
@@ -285,13 +257,8 @@ const GuidedPresentation = () => {
   // Align HTML elements with narration sections
   const alignHTMLElementsWithNarration = (htmlElements, narrationSteps) => {
     if (!narrationSteps || narrationSteps.length === 0) {
-      console.log('⚠️ No narration steps provided');
       return [];
     }
-
-    console.log('🎯 HIGHLIGHT ALIGNMENT DEBUG');
-    console.log('Narration steps:', narrationSteps.length);
-    console.log('HTML elements:', htmlElements.length);
 
     const alignedHighlights = [];
     const usedElementIds = new Set();
@@ -300,15 +267,9 @@ const GuidedPresentation = () => {
     narrationSteps.forEach((step, stepIndex) => {
       const stepText = step.highlightText || step.narrative || '';
       const normalizedStepText = normalizeText(stepText);
-      
-      console.log(`\n🔍 STEP ${stepIndex + 1} ANALYSIS:`);
-      console.log(`Narration: "${stepText}"`);
-      console.log(`Highlight Text: "${step.highlightText || 'N/A'}"`);
-      console.log(`Normalized: "${normalizedStepText}"`);
 
       // Find all elements that haven't been used yet
       const availableElements = htmlElements.filter(element => !usedElementIds.has(element.id));
-      console.log(`Available elements: ${availableElements.length}`);
       
       // Calculate similarity scores for all available elements
       const elementScores = availableElements.map(element => ({
@@ -330,14 +291,6 @@ const GuidedPresentation = () => {
         return b.similarity - a.similarity;
       });
 
-      console.log('📊 TOP 5 MATCHES:');
-      elementScores.slice(0, 5).forEach((es, i) => {
-        console.log(`${i + 1}. ID: ${es.element.id}`);
-        console.log(`   Text: "${es.element.text}"`);
-        console.log(`   Coords: (${es.element.x}, ${es.element.y}) ${es.element.width}x${es.element.height}`);
-        console.log(`   Similarity: ${es.similarity.toFixed(3)}, Keywords: ${es.keywordMatch}, Exact: ${es.exactMatch}`);
-      });
-
       // Find the best match(es) - be much more selective
       const bestMatch = elementScores[0];
       
@@ -355,8 +308,6 @@ const GuidedPresentation = () => {
           Math.abs(es.element.y - bestMatch.element.y) < 50 && // Close vertically
           Math.abs(es.element.x - bestMatch.element.x) < 200 // Close horizontally
         ).map(es => es.element);
-
-        console.log(`✅ FOUND ${similarElements.length} MATCHING ELEMENTS (filtered from ${elementScores.length})`);
 
         // If we have too many elements, just use the best one
         const elementsToMerge = similarElements.length > 5 ? [bestMatch.element] : similarElements;
@@ -381,17 +332,12 @@ const GuidedPresentation = () => {
             elements: mergedElement.elements || [mergedElement]
           };
           
-          console.log(`🎯 CREATED HIGHLIGHT:`);
-          console.log(`   Position: (${highlight.x}, ${highlight.y}) ${highlight.width}x${highlight.height}`);
-          console.log(`   Text: "${highlight.text}"`);
-          
           alignedHighlights.push(highlight);
           
           // Mark all merged elements as used
           elementsToMerge.forEach(element => usedElementIds.add(element.id));
         }
       } else {
-        console.log(`❌ NO MATCH FOUND - Creating placeholder`);
         // Create a "needs review" highlight
         const needsReviewHighlight = {
           id: `needs-review-${stepIndex}`,
@@ -411,12 +357,6 @@ const GuidedPresentation = () => {
         };
         alignedHighlights.push(needsReviewHighlight);
       }
-    });
-
-    console.log(`\n🎯 FINAL ALIGNMENT RESULT:`);
-    console.log(`Total highlights: ${alignedHighlights.length}`);
-    alignedHighlights.forEach((h, i) => {
-      console.log(`${i + 1}. Step ${h.step}: (${h.x}, ${h.y}) ${h.width}x${h.height} - "${h.text.substring(0, 30)}..." ${h.needsReview ? '[NEEDS REVIEW]' : ''}`);
     });
 
     return alignedHighlights;
@@ -499,12 +439,6 @@ const GuidedPresentation = () => {
     importantBlocks.forEach((block, index) => {
       block.step = index + 1;
     });
-    
-    console.log('EOB-focused semantic blocks:', importantBlocks.map(b => ({
-      id: b.id,
-      text: b.text.substring(0, 50) + '...',
-      importance: b.importance
-    })));
     
     return importantBlocks;
   };
@@ -620,11 +554,9 @@ const GuidedPresentation = () => {
       
       if (result.success) {
         setNarrativeScript(result.narrative);
-        console.log('🎬 Generated narrative script:', result.narrative);
         return result.narrative;
       } else {
         setNarrativeError(result.error);
-        console.error('❌ Failed to generate narrative:', result.error);
         return null;
       }
     } catch (error) {
@@ -647,11 +579,9 @@ const GuidedPresentation = () => {
       
       if (result.success) {
         setAudioData(result);
-        console.log('🎵 Generated audio for narrative:', result);
         return result;
       } else {
         setAudioError(result.error);
-        console.error('❌ Failed to generate audio:', result.error);
         return null;
       }
     } catch (error) {
@@ -669,13 +599,10 @@ const GuidedPresentation = () => {
     const canvasWidth = canvas.width;
     const canvasHeight = canvas.height;
     
-    // Debug logging
-    console.log('🎵 Audio data for HTML generation:', audioData);
-    console.log('📝 Narrative script for HTML generation:', narrativeData);
+    // Prepare data for HTML generation
     
     // Prepare audio data for embedding - convert ArrayBuffer to base64
     const audioDataForHTML = audioData && audioData.audioSteps ? audioData.audioSteps.map(step => {
-      console.log('🎵 Processing step audio:', step);
       if (step.success && step.audioData) {
         try {
           // Convert ArrayBuffer to base64 string for embedding
@@ -690,7 +617,6 @@ const GuidedPresentation = () => {
           }
           
           const base64String = btoa(binaryString);
-          console.log('🎵 Converted to base64, length:', base64String.length);
           return {
             stepNumber: step.stepNumber,
             audioData: `data:audio/mpeg;base64,${base64String}`,
@@ -698,7 +624,7 @@ const GuidedPresentation = () => {
             text: step.text
           };
         } catch (error) {
-          console.error('🎵 Error converting audio to base64:', error);
+          console.error('Error converting audio to base64:', error);
           return {
             stepNumber: step.stepNumber,
             audioData: null,
@@ -707,7 +633,6 @@ const GuidedPresentation = () => {
           };
         }
       }
-      console.log('🎵 No audio data for step:', step.stepNumber);
       return {
         stepNumber: step.stepNumber,
         audioData: null,
@@ -715,8 +640,6 @@ const GuidedPresentation = () => {
         text: step.text
       };
     }) : [];
-    
-    console.log('🎵 Final audio data for HTML:', audioDataForHTML);
     
     const scaleX = canvasWidth / viewport.width;
     const scaleY = canvasHeight / viewport.height;
@@ -784,12 +707,6 @@ const GuidedPresentation = () => {
                     const stepNumber = highlight.step;
                     const needsReview = highlight.needsReview ? 'needs-review' : '';
                     const reviewText = highlight.needsReview ? ' (Needs Review)' : '';
-                    
-                    console.log(`🎯 HIGHLIGHT ${stepNumber} POSITIONING:`);
-                    console.log(`   Original: (${highlight.x}, ${highlight.y}) ${highlight.width}x${highlight.height}`);
-                    console.log(`   Scaled: (${x}, ${y}) ${width}x${height}`);
-                    console.log(`   Scale factors: ${scaleX}x, ${scaleY}y`);
-                    console.log(`   Text: "${highlight.text}"`);
                     
                     return `
                         <div class="highlight-element ${needsReview}" id="highlight-${stepNumber - 1}" data-step="${stepNumber - 1}" style="left: ${x}px; top: ${y}px; width: ${width}px; height: ${height}px;">
@@ -915,30 +832,14 @@ const GuidedPresentation = () => {
         }
         
         function startPlay() {
-            console.log('🎮 ===== START PLAY CALLED =====');
-            console.log('🎮 isPlaying:', isPlaying);
-            console.log('🎮 currentStep:', currentStep);
-            console.log('🎮 totalSteps:', totalSteps);
-            console.log('🎮 audioData exists:', !!audioData);
-            console.log('🎮 audioData length:', audioData ? audioData.length : 'null');
-            console.log('🎮 audioData type:', typeof audioData);
-            console.log('🎮 audioData[currentStep] exists:', !!(audioData && audioData[currentStep]));
-            console.log('🎮 audioData[currentStep].audioData exists:', !!(audioData && audioData[currentStep] && audioData[currentStep].audioData));
             
             isPlaying = true;
             updateStep(currentStep);
             
             // Check if we have audio data
             if (audioData && audioData.length > 0 && audioData[currentStep] && audioData[currentStep].audioData) {
-                console.log('✅ Playing with audio');
                 playStepAudio(currentStep);
             } else {
-                console.log('❌ Playing without audio - using timed progression');
-                console.log('❌ Audio check failed:');
-                console.log('❌ - audioData exists:', !!audioData);
-                console.log('❌ - audioData.length > 0:', !!(audioData && audioData.length > 0));
-                console.log('❌ - audioData[currentStep] exists:', !!(audioData && audioData[currentStep]));
-                console.log('❌ - audioData[currentStep].audioData exists:', !!(audioData && audioData[currentStep] && audioData[currentStep].audioData));
                 playInterval = setInterval(() => {
                     if (currentStep < totalSteps - 1) {
                         nextStep();
@@ -950,32 +851,11 @@ const GuidedPresentation = () => {
         }
         
         async function playStepAudio(stepIndex) {
-            console.log('🎵 ===== PLAY STEP AUDIO CALLED =====');
-            console.log('🎵 Step index:', stepIndex);
-            console.log('🎵 Total steps:', totalSteps);
-            console.log('🎵 Audio data available:', !!audioData);
-            console.log('🎵 Audio data type:', typeof audioData);
-            console.log('🎵 Audio data length:', audioData ? audioData.length : 'null');
-            console.log('🎵 Audio data keys:', audioData ? Object.keys(audioData) : 'null');
-            console.log('🎵 Step audio data exists:', !!(audioData && audioData[stepIndex]));
-            console.log('🎵 Step audio data:', audioData ? audioData[stepIndex] : 'No audio data');
             
             if (audioData && audioData[stepIndex]) {
-                console.log('🎵 Step audio data details:');
-                console.log('🎵 - success:', audioData[stepIndex].success);
-                console.log('🎵 - has audioData:', !!audioData[stepIndex].audioData);
-                console.log('🎵 - audioData type:', typeof audioData[stepIndex].audioData);
-                console.log('🎵 - audioData length:', audioData[stepIndex].audioData ? audioData[stepIndex].audioData.length : 'null');
-                console.log('🎵 - text:', audioData[stepIndex].text);
-                console.log('🎵 - duration:', audioData[stepIndex].duration);
             }
             
             if (!audioData || !audioData[stepIndex] || !audioData[stepIndex].audioData) {
-                console.log('❌ No audio data for step', stepIndex, '- using fallback timing');
-                console.log('❌ Reasons:');
-                console.log('❌ - audioData exists:', !!audioData);
-                console.log('❌ - audioData[stepIndex] exists:', !!(audioData && audioData[stepIndex]));
-                console.log('❌ - audioData[stepIndex].audioData exists:', !!(audioData && audioData[stepIndex] && audioData[stepIndex].audioData));
                 setTimeout(() => {
                     if (stepIndex < totalSteps - 1) {
                         nextStep();
@@ -991,7 +871,6 @@ const GuidedPresentation = () => {
                 const audio = new Audio(audioData[stepIndex].audioData);
                 
                 audio.onended = () => {
-                    console.log('Audio finished for step', stepIndex);
                     if (stepIndex < totalSteps - 1) {
                         setTimeout(() => {
                             nextStep();
@@ -1020,7 +899,6 @@ const GuidedPresentation = () => {
                 
                 currentAudio = audio;
                 await audio.play();
-                console.log('Successfully started audio for step', stepIndex);
                 
             } catch (error) {
                 console.error('Error playing audio:', error);
@@ -1069,18 +947,7 @@ const GuidedPresentation = () => {
         updateStep(0);
         
         // Debug logging
-        console.log('🎬 Presentation loaded');
-        console.log('🎵 Audio data:', audioData);
-        console.log('📝 Narrative script:', narrativeScript);
-        console.log('📍 Elements:', elements);
-        console.log('🎵 Audio data type:', typeof audioData);
-        console.log('🎵 Audio data length:', audioData ? audioData.length : 'null');
-        console.log('🎵 Audio data keys:', audioData ? Object.keys(audioData) : 'null');
         if (audioData && audioData[0]) {
-            console.log('🎵 First audio step:', audioData[0]);
-            console.log('🎵 First audio step has audioData:', !!audioData[0].audioData);
-            console.log('🎵 First audio step audioData type:', typeof audioData[0].audioData);
-            console.log('🎵 First audio step audioData length:', audioData[0].audioData ? audioData[0].audioData.length : 'null');
         }
         
         // Keyboard navigation
@@ -1340,30 +1207,14 @@ const GuidedPresentation = () => {
         }
         
         function startPlay() {
-            console.log('🎮 ===== START PLAY CALLED =====');
-            console.log('🎮 isPlaying:', isPlaying);
-            console.log('🎮 currentStep:', currentStep);
-            console.log('🎮 totalSteps:', totalSteps);
-            console.log('🎮 audioData exists:', !!audioData);
-            console.log('🎮 audioData length:', audioData ? audioData.length : 'null');
-            console.log('🎮 audioData type:', typeof audioData);
-            console.log('🎮 audioData[currentStep] exists:', !!(audioData && audioData[currentStep]));
-            console.log('🎮 audioData[currentStep].audioData exists:', !!(audioData && audioData[currentStep] && audioData[currentStep].audioData));
             
             isPlaying = true;
             updateStep(currentStep);
             
             // Check if we have audio data
             if (audioData && audioData.length > 0 && audioData[currentStep] && audioData[currentStep].audioData) {
-                console.log('✅ Playing with audio');
                 playStepAudio(currentStep);
             } else {
-                console.log('❌ Playing without audio - using timed progression');
-                console.log('❌ Audio check failed:');
-                console.log('❌ - audioData exists:', !!audioData);
-                console.log('❌ - audioData.length > 0:', !!(audioData && audioData.length > 0));
-                console.log('❌ - audioData[currentStep] exists:', !!(audioData && audioData[currentStep]));
-                console.log('❌ - audioData[currentStep].audioData exists:', !!(audioData && audioData[currentStep] && audioData[currentStep].audioData));
                 playInterval = setInterval(() => {
                     if (currentStep < totalSteps - 1) {
                         nextStep();
@@ -1375,32 +1226,11 @@ const GuidedPresentation = () => {
         }
         
         async function playStepAudio(stepIndex) {
-            console.log('🎵 ===== PLAY STEP AUDIO CALLED =====');
-            console.log('🎵 Step index:', stepIndex);
-            console.log('🎵 Total steps:', totalSteps);
-            console.log('🎵 Audio data available:', !!audioData);
-            console.log('🎵 Audio data type:', typeof audioData);
-            console.log('🎵 Audio data length:', audioData ? audioData.length : 'null');
-            console.log('🎵 Audio data keys:', audioData ? Object.keys(audioData) : 'null');
-            console.log('🎵 Step audio data exists:', !!(audioData && audioData[stepIndex]));
-            console.log('🎵 Step audio data:', audioData ? audioData[stepIndex] : 'No audio data');
             
             if (audioData && audioData[stepIndex]) {
-                console.log('🎵 Step audio data details:');
-                console.log('🎵 - success:', audioData[stepIndex].success);
-                console.log('🎵 - has audioData:', !!audioData[stepIndex].audioData);
-                console.log('🎵 - audioData type:', typeof audioData[stepIndex].audioData);
-                console.log('🎵 - audioData length:', audioData[stepIndex].audioData ? audioData[stepIndex].audioData.length : 'null');
-                console.log('🎵 - text:', audioData[stepIndex].text);
-                console.log('🎵 - duration:', audioData[stepIndex].duration);
             }
             
             if (!audioData || !audioData[stepIndex] || !audioData[stepIndex].audioData) {
-                console.log('❌ No audio data for step', stepIndex, '- using fallback timing');
-                console.log('❌ Reasons:');
-                console.log('❌ - audioData exists:', !!audioData);
-                console.log('❌ - audioData[stepIndex] exists:', !!(audioData && audioData[stepIndex]));
-                console.log('❌ - audioData[stepIndex].audioData exists:', !!(audioData && audioData[stepIndex] && audioData[stepIndex].audioData));
                 setTimeout(() => {
                     if (stepIndex < totalSteps - 1) {
                         nextStep();
@@ -1416,7 +1246,6 @@ const GuidedPresentation = () => {
                 const audio = new Audio(audioData[stepIndex].audioData);
                 
                 audio.onended = () => {
-                    console.log('Audio finished for step', stepIndex);
                     if (stepIndex < totalSteps - 1) {
                         setTimeout(() => {
                             nextStep();
@@ -1445,7 +1274,6 @@ const GuidedPresentation = () => {
                 
                 currentAudio = audio;
                 await audio.play();
-                console.log('Successfully started audio for step', stepIndex);
                 
             } catch (error) {
                 console.error('Error playing audio:', error);
@@ -1494,18 +1322,7 @@ const GuidedPresentation = () => {
         updateStep(0);
         
         // Debug logging
-        console.log('🎬 Presentation loaded');
-        console.log('🎵 Audio data:', audioData);
-        console.log('📝 Narrative script:', narrativeScript);
-        console.log('📍 Elements:', elements);
-        console.log('🎵 Audio data type:', typeof audioData);
-        console.log('🎵 Audio data length:', audioData ? audioData.length : 'null');
-        console.log('🎵 Audio data keys:', audioData ? Object.keys(audioData) : 'null');
         if (audioData && audioData[0]) {
-            console.log('🎵 First audio step:', audioData[0]);
-            console.log('🎵 First audio step has audioData:', !!audioData[0].audioData);
-            console.log('🎵 First audio step audioData type:', typeof audioData[0].audioData);
-            console.log('🎵 First audio step audioData length:', audioData[0].audioData ? audioData[0].audioData.length : 'null');
         }
         
         // Keyboard navigation

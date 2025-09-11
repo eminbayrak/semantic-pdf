@@ -9,11 +9,7 @@ class AzureDocumentIntelligence {
     this.endpoint = import.meta.env.VITE_AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT;
     this.key = import.meta.env.VITE_AZURE_DOCUMENT_INTELLIGENCE_KEY;
     
-    console.log('Environment variables:', {
-      endpoint: this.endpoint ? 'Set' : 'Not set',
-      key: this.key ? 'Set' : 'Not set',
-      allEnv: import.meta.env
-    });
+    // Environment variables are configured
     
     if (!this.endpoint || !this.key) {
       throw new Error(`Azure Document Intelligence credentials not configured. Endpoint: ${this.endpoint ? 'Set' : 'Missing'}, Key: ${this.key ? 'Set' : 'Missing'}`);
@@ -33,12 +29,9 @@ class AzureDocumentIntelligence {
    */
   async analyzeDocument(pdfBuffer, model = 'prebuilt-document') {
     try {
-      console.log('Starting document analysis with Azure Document Intelligence...');
-      
       const poller = await this.client.beginAnalyzeDocument(model, pdfBuffer);
       const result = await poller.pollUntilDone();
       
-      console.log('Document analysis completed successfully');
       return this.processAnalysisResult(result);
       
     } catch (error) {
@@ -97,7 +90,11 @@ class AzureDocumentIntelligence {
   categorizeKeyValuePair(key) {
     if (!key) return 'unknown';
     
-    const keyLower = key.toLowerCase();
+    // Handle both string keys and object keys with content property
+    const keyText = typeof key === 'string' ? key : (key.content || '');
+    if (!keyText) return 'unknown';
+    
+    const keyLower = keyText.toLowerCase();
     
     if (/member|patient|client|customer/i.test(keyLower)) {
       return 'member-info';
@@ -239,9 +236,7 @@ class AzureDocumentIntelligence {
       errors.push('No structured data found in document');
     }
     
-    if (errors.length > 0) {
-      console.warn('Document analysis validation warnings:', errors);
-    }
+    // Validation completed
     
     return {
       isValid: errors.length === 0,
@@ -271,10 +266,11 @@ class AzureDocumentIntelligence {
   hasFinancialData(result) {
     if (!result.keyValuePairs) return false;
     
-    return result.keyValuePairs.some(pair => 
-      pair.category === 'financial' || 
-      /amount|total|cost|price|fee|charge|billed|covered/i.test(pair.key || '')
-    );
+    return result.keyValuePairs.some(pair => {
+      const keyText = typeof pair.key === 'string' ? pair.key : (pair.key?.content || '');
+      return pair.category === 'financial' || 
+        /amount|total|cost|price|fee|charge|billed|covered/i.test(keyText);
+    });
   }
 
   /**
@@ -283,10 +279,11 @@ class AzureDocumentIntelligence {
   hasMemberData(result) {
     if (!result.keyValuePairs) return false;
     
-    return result.keyValuePairs.some(pair => 
-      pair.category === 'member-info' || 
-      /member|patient|client|customer/i.test(pair.key || '')
-    );
+    return result.keyValuePairs.some(pair => {
+      const keyText = typeof pair.key === 'string' ? pair.key : (pair.key?.content || '');
+      return pair.category === 'member-info' || 
+        /member|patient|client|customer/i.test(keyText);
+    });
   }
 
   /**
@@ -294,6 +291,120 @@ class AzureDocumentIntelligence {
    */
   hasTableData(result) {
     return result.tables && result.tables.length > 0;
+  }
+
+  /**
+   * Extracts coordinates from analysis result and logs them to console
+   * @param {Object} result - Analysis result from Azure Document Intelligence
+   * @returns {Object} Extracted coordinates organized by type
+   */
+  extractCoordinates(result) {
+    const coordinates = {
+      pages: [],
+      tables: [],
+      keyValuePairs: [],
+      paragraphs: []
+    };
+
+    // Extract page coordinates
+    if (result.pages && result.pages.length > 0) {
+      result.pages.forEach((page, pageIndex) => {
+        const pageCoords = {
+          pageNumber: page.pageNumber,
+          width: page.width,
+          height: page.height,
+          unit: page.unit,
+          spans: page.spans || []
+        };
+        
+        coordinates.pages.push(pageCoords);
+      });
+    }
+
+    // Extract table coordinates
+    if (result.tables && result.tables.length > 0) {
+      result.tables.forEach((table, tableIndex) => {
+        const tableCoords = {
+          tableIndex,
+          rowCount: table.rowCount,
+          columnCount: table.columnCount,
+          cells: [],
+          boundingRegions: table.boundingRegions || []
+        };
+
+        if (table.boundingRegions && table.boundingRegions.length > 0) {
+          table.boundingRegions.forEach((region, regionIndex) => {
+            // Store region data without logging
+          });
+        }
+
+        if (table.cells && table.cells.length > 0) {
+          table.cells.forEach((cell, cellIndex) => {
+            const cellCoords = {
+              cellIndex,
+              rowIndex: cell.rowIndex,
+              columnIndex: cell.columnIndex,
+              content: cell.content,
+              confidence: cell.confidence,
+              boundingRegions: cell.boundingRegions || []
+            };
+
+            if (cell.boundingRegions && cell.boundingRegions.length > 0) {
+              cell.boundingRegions.forEach((region, regionIndex) => {
+                // Store region data without logging
+              });
+            }
+
+            tableCoords.cells.push(cellCoords);
+          });
+        }
+
+        coordinates.tables.push(tableCoords);
+      });
+    }
+
+    // Extract key-value pair coordinates
+    if (result.keyValuePairs && result.keyValuePairs.length > 0) {
+      result.keyValuePairs.forEach((pair, pairIndex) => {
+        const pairCoords = {
+          pairIndex,
+          key: pair.key?.content || '',
+          value: pair.value?.content || '',
+          confidence: pair.confidence,
+          boundingRegions: pair.boundingRegions || []
+        };
+
+        if (pair.boundingRegions && pair.boundingRegions.length > 0) {
+          pair.boundingRegions.forEach((region, regionIndex) => {
+            // Store region data without logging
+          });
+        }
+
+        coordinates.keyValuePairs.push(pairCoords);
+      });
+    }
+
+    // Extract paragraph coordinates
+    if (result.paragraphs && result.paragraphs.length > 0) {
+      result.paragraphs.forEach((paragraph, paragraphIndex) => {
+        const paragraphCoords = {
+          paragraphIndex,
+          content: paragraph.content,
+          confidence: paragraph.confidence,
+          boundingRegions: paragraph.boundingRegions || []
+        };
+
+        if (paragraph.boundingRegions && paragraph.boundingRegions.length > 0) {
+          paragraph.boundingRegions.forEach((region, regionIndex) => {
+            // Store region data without logging
+          });
+        }
+
+        coordinates.paragraphs.push(paragraphCoords);
+      });
+    }
+
+    return coordinates;
   }
 }
 

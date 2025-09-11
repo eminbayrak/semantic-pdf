@@ -28,15 +28,7 @@ const PDFConverter = ({ onHTMLGenerated, onError }) => {
     // Extract key information from Azure analysis
     const { pages, tables, keyValuePairs, paragraphs } = analysisResult;
     
-    console.log('Azure analysis result:', {
-      pages: pages?.length || 0,
-      tables: tables?.length || 0,
-      keyValuePairs: keyValuePairs?.length || 0,
-      paragraphs: paragraphs?.length || 0,
-      sampleKeyValuePair: keyValuePairs?.[0],
-      sampleTable: tables?.[0],
-      sampleParagraph: paragraphs?.[0]
-    });
+    // Azure analysis result processed
     
     let html = `
       <!DOCTYPE html>
@@ -167,7 +159,6 @@ const PDFConverter = ({ onHTMLGenerated, onError }) => {
 
       tables.forEach((table, tableIndex) => {
         if (table.cells && table.cells.length > 0) {
-          console.log('Processing table:', table);
           
           // Group cells by row
           const rowGroups = {};
@@ -183,8 +174,7 @@ const PDFConverter = ({ onHTMLGenerated, onError }) => {
             .map(key => parseInt(key))
             .sort((a, b) => a - b);
 
-          console.log('Sorted rows:', sortedRows);
-          console.log('Row groups:', rowGroups);
+          // Rows processed
 
           // Create table header (first row or cells marked as columnHeader)
           const headerRow = table.cells.filter(cell => cell.kind === 'columnHeader');
@@ -230,7 +220,6 @@ const PDFConverter = ({ onHTMLGenerated, onError }) => {
 
       // If no tables were processed, add a sample table for demonstration
       if (tables.length === 0 || !tables.some(table => table.cells && table.cells.length > 0)) {
-        console.log('No table data found, adding sample data for demonstration');
         html += `
           <tbody>
             <tr id="table-row-1" class="highlight-target">

@@ -136,7 +136,6 @@ export const DemoPDFProcessor = ({ onHTMLGenerated, onError }) => {
       onHTMLGenerated(enhancedHTML);
 
     } catch (error) {
-      console.error('Demo processing error:', error);
       onError(error);
     } finally {
       setIsProcessing(false);
