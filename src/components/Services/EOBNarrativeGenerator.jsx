@@ -29,13 +29,13 @@ const EOBNarrativeGenerator = () => {
     },
     patientMemberInfo: {
       name: '2. Patient and Member Information',
-      keywords: ['member name:', 'patient name:', 'address:', 'city, state, zip:', 'id:', 'group:', 'group number:', 'subscriber number:', 'document number:', 'statement date:'],
+      keywords: ['subscriber name', 'subscriber address', 'subscriber city', 'inquiries:', 'claim number:', 'group name:', 'subscriber:', 'subscriber id#:', 'patient:', 'dentist:', 'date:', 'other carrier paid'],
       color: '#4ecdc4',
       narrative: 'This section contains your personal information including your name, address, member ID, group number, and other identifying details. It also includes the statement date and document number for reference.'
     },
     serviceDescription: {
       name: '3. Service Description',
-      keywords: ['service description', 'date of service', 'procedure', 'diagnosis', 'treatment'],
+      keywords: ['service date', 'proc. code', 'procedure description', 'th', 'surf', 'evaluation', 'cleaning', '120', '1110', 'submit amt', 'fee adjust', 'approved amt', 'allowed amt', 'deduct applied', 'co-pay', 'patient payment', 'delta dental payment', 'ref. code'],
       color: '#45b7d1',
       narrative: 'Here you\'ll find details about the medical services you received, including the date of service, provider information, procedures performed, and any diagnosis codes. This section explains what medical care was provided.'
     },
@@ -65,7 +65,7 @@ const EOBNarrativeGenerator = () => {
     },
     remarkCodes: {
       name: '8. Remark Codes or Notes',
-      keywords: ['ref. code', 'reference codes', 'remark code', 'remark', 'code', 'note', 'explanation'],
+      keywords: ['ref. code', 'reference codes', 'remark code', 'remark', 'note', 'pdc'],
       color: '#fd79a8',
       narrative: 'Any special notes, codes, or explanations about your claim are listed here. This might include information about coverage decisions, denials, or special circumstances.'
     },
@@ -79,12 +79,12 @@ const EOBNarrativeGenerator = () => {
 
   // Filter matches to keep only those that are close together (likely part of the same section)
   const filterNearbyMatches = (matches) => {
-    if (matches.length <= 3) return matches; // Keep all if few matches
+    if (matches.length <= 2) return matches; // Keep all if few matches
     
     // Sort matches by Y position (top to bottom)
     const sortedMatches = matches.sort((a, b) => a.y - b.y);
     
-    // Group matches that are close together vertically
+    // Group matches that are close together vertically and horizontally
     const groups = [];
     let currentGroup = [sortedMatches[0]];
     
@@ -92,8 +92,12 @@ const EOBNarrativeGenerator = () => {
       const currentMatch = sortedMatches[i];
       const lastMatch = currentGroup[currentGroup.length - 1];
       
-      // If this match is close to the last one (within 100px vertically), add to current group
-      if (Math.abs(currentMatch.y - lastMatch.y) < 100) {
+      // Calculate distance between matches
+      const verticalDistance = Math.abs(currentMatch.y - lastMatch.y);
+      const horizontalDistance = Math.abs(currentMatch.x - lastMatch.x);
+      
+      // If this match is close to the last one (within 80px vertically and 300px horizontally), add to current group
+      if (verticalDistance < 80 && horizontalDistance < 300) {
         currentGroup.push(currentMatch);
       } else {
         // Start a new group
@@ -107,7 +111,12 @@ const EOBNarrativeGenerator = () => {
     const largestGroup = groups.reduce((max, group) => 
       group.length > max.length ? group : max, groups[0]);
     
-    console.log(`🔍 Filtered ${matches.length} matches down to ${largestGroup.length} nearby matches`);
+    // Additional filtering: if the group is too large, limit it
+    if (largestGroup.length > 8) {
+      // Take only the first 8 matches to prevent overly large bounding boxes
+      return largestGroup.slice(0, 8);
+    }
+    
     return largestGroup;
   };
 
@@ -154,8 +163,6 @@ const EOBNarrativeGenerator = () => {
       
       await page.render(renderContext).promise;
       
-      console.log(`📄 Page ${pageNum} loaded: ${viewport.width}x${viewport.height}`);
-      
       // Search for sections
       await searchSectionsInPage(page, viewport, filterSection);
       
@@ -181,21 +188,14 @@ const EOBNarrativeGenerator = () => {
         
         // Apply filtering logic
         if (currentFilter !== 'all' && sectionKey !== currentFilter) {
-          console.log(`⏭️ Skipping section: ${section.name} (not selected)`);
           return;
         }
         
-        console.log(`🔍 Processing section: ${section.name}`);
         const sectionMatches = [];
         
         textContent.items.forEach((item, index) => {
           if (item.str) {
             const textLower = item.str.toLowerCase();
-            
-            // Debug logging for specific sections that aren't matching
-            if (sectionKey === 'totalCharges' || sectionKey === 'insurancePayment') {
-              console.log(`🔍 Debug ${section.name}: Checking text "${item.str}" against keywords:`, section.keywords);
-            }
             
             // Check if this text matches any of the section keywords
             const matchingKeyword = section.keywords.find(keyword => 
@@ -212,6 +212,11 @@ const EOBNarrativeGenerator = () => {
               const canvasX = x;
               const canvasY = viewport.height - y - height;
               
+              // Debug logging for problematic sections
+              if (sectionKey === 'serviceDescription' || sectionKey === 'remarkCodes') {
+                console.log(`🔍 ${section.name} - Found match: "${item.str}" at (${canvasX.toFixed(0)}, ${canvasY.toFixed(0)}) - keyword: "${matchingKeyword}"`);
+              }
+              
               sectionMatches.push({
                 x: canvasX,
                 y: canvasY,
@@ -220,10 +225,6 @@ const EOBNarrativeGenerator = () => {
                 text: item.str,
                 keyword: matchingKeyword
               });
-              
-              if (sectionKey === 'totalCharges' || sectionKey === 'insurancePayment') {
-                console.log(`✅ Match found for ${section.name}: "${item.str}" matched keyword "${matchingKeyword}"`);
-              }
             }
           }
         });
@@ -264,18 +265,26 @@ const EOBNarrativeGenerator = () => {
               narrative: section.narrative
             };
             
+            // Log essential info for verification
+            console.log(`🎯 ${section.name}:`);
+            console.log(`   Position: (${sectionBox.x.toFixed(0)}, ${sectionBox.y.toFixed(0)})`);
+            console.log(`   Size: ${sectionBox.width.toFixed(0)} x ${sectionBox.height.toFixed(0)}`);
+            console.log(`   Text matches:`, filteredMatches.map(m => `"${m.text}"`));
+            console.log(`   Keywords matched:`, filteredMatches.map(m => `"${m.keyword}"`));
+            console.log(`   Raw coordinates:`, filteredMatches.map(m => `(${m.x.toFixed(0)},${m.y.toFixed(0)})`));
+            console.log(`---`);
+            
             results.push(sectionBox);
-            console.log(`🎯 Found ${filteredMatches.length} filtered matches for section: ${section.name} - Created single bounding box`);
           } else {
-            console.log(`❌ No valid matches found for section: ${section.name} (all matches filtered out)`);
+            console.log(`❌ ${section.name}: No valid matches (filtered out)`);
           }
         } else {
-          console.log(`❌ No matches found for section: ${section.name}`);
+          console.log(`❌ ${section.name}: No matches found`);
         }
       });
       
       setSectionResults(results);
-      console.log(`🔍 Section search complete: Found ${results.length} total section boxes for selectedSection: "${currentFilter}"`);
+      console.log(`📊 Found ${results.length} sections with highlights`);
       
     } catch (err) {
       console.error('Error searching sections:', err);
@@ -366,6 +375,25 @@ const EOBNarrativeGenerator = () => {
             />
             Show Highlights
           </label>
+          
+          <button
+            onClick={() => {
+              console.log('🔍 DEBUGGING INFO:');
+              console.log('Canvas dimensions:', canvasRef.current?.width, 'x', canvasRef.current?.height);
+              console.log('Current viewport scale:', scale);
+              console.log('Current page:', currentPage);
+              console.log('Section results (expanded):');
+              sectionResults.forEach((section, index) => {
+                console.log(`  ${index + 1}. ${section.sectionName}:`);
+                console.log(`     Position: (${section.x}, ${section.y})`);
+                console.log(`     Size: ${section.width} x ${section.height}`);
+                console.log(`     Matches: ${section.matchCount}`);
+              });
+            }}
+            style={{ marginLeft: '10px', padding: '5px 10px' }}
+          >
+            🔍 Debug Info
+          </button>
         </div>
       )}
 
@@ -397,7 +425,13 @@ const EOBNarrativeGenerator = () => {
                   animation: 'pulse 2s infinite',
                   boxShadow: `0 0 15px ${highlight.color}50`
                 }}
-                title={highlight.sectionName}
+                title={`${highlight.sectionName} - Position: (${highlight.x.toFixed(0)}, ${highlight.y.toFixed(0)}) Size: ${highlight.width.toFixed(0)}x${highlight.height.toFixed(0)}`}
+                onClick={() => {
+                  console.log(`🎯 CLICKED HIGHLIGHT: ${highlight.sectionName}`);
+                  console.log(`   Position: (${highlight.x.toFixed(2)}, ${highlight.y.toFixed(2)})`);
+                  console.log(`   Size: ${highlight.width.toFixed(2)} x ${highlight.height.toFixed(2)}`);
+                  console.log(`   Matches: ${highlight.matchCount} text items`);
+                }}
               >
                 {/* Circle number */}
                 <div
@@ -420,6 +454,46 @@ const EOBNarrativeGenerator = () => {
                   }}
                 >
                   {highlight.sectionNumber}
+                </div>
+                
+                {/* Coordinate overlay for debugging */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '5px',
+                    left: '5px',
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    color: 'white',
+                    padding: '2px 4px',
+                    borderRadius: '3px',
+                    fontSize: '9px',
+                    fontFamily: 'monospace',
+                    pointerEvents: 'none',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  ({highlight.x.toFixed(0)},{highlight.y.toFixed(0)}) {highlight.width.toFixed(0)}x{highlight.height.toFixed(0)}
+                </div>
+                
+                {/* Section name overlay */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    bottom: '5px',
+                    left: '5px',
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    color: 'white',
+                    padding: '2px 4px',
+                    borderRadius: '3px',
+                    fontSize: '8px',
+                    fontFamily: 'monospace',
+                    pointerEvents: 'none',
+                    maxWidth: '200px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}
+                >
+                  {highlight.sectionName}
                 </div>
               </div>
             ))}

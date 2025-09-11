@@ -209,4 +209,4 @@ This project is licensed under the MIT License.
 For issues and questions:
 1. Check the troubleshooting section
 2. Review the API documentation
-3. Create an issue in the repository
+3. Create an issue in the repositoryimage.png

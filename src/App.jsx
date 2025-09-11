@@ -9,6 +9,7 @@ import PDFCoordinateExtractor from './components/Services/PDFCoordinateExtractor
 import PDFCoordinateVisualizer from './components/Services/PDFCoordinateVisualizer';
 import PDFTextHighlighter from './components/Services/PDFTextHighlighter';
 import EOBNarrativeGenerator from './components/Services/EOBNarrativeGenerator';
+import UniversalEOBHighlighter from './components/Services/UniversalEOBHighlighter';
 import './App.css';
 
 /**
@@ -21,7 +22,7 @@ function App() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
-  const [conversionMode, setConversionMode] = useState('narrativeGenerator'); // 'layout', 'semantic', 'hybrid', 'guided', 'coordinates', 'visualizer', 'textHighlighter', 'narrativeGenerator'
+  const [conversionMode, setConversionMode] = useState('universalHighlighter'); // 'layout', 'semantic', 'hybrid', 'guided', 'coordinates', 'visualizer', 'textHighlighter', 'narrativeGenerator', 'universalHighlighter'
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   // Check environment variables
@@ -74,6 +75,8 @@ function App() {
         return <PDFTextHighlighter />;
       case 'narrativeGenerator':
         return <EOBNarrativeGenerator />;
+      case 'universalHighlighter':
+        return <UniversalEOBHighlighter />;
       case 'layout':
         return <PDFToHTMLTest />;
       case 'semantic':
@@ -146,6 +149,13 @@ function App() {
                 >
                   📖 EOB Narrative Generator
                   <span>Generate HTML with narrative text and synchronized PDF highlights</span>
+                </button>
+                <button 
+                  className={`option ${conversionMode === 'universalHighlighter' ? 'active' : ''}`}
+                  onClick={() => handleConversionModeChange('universalHighlighter')}
+                >
+                  🌍 Universal EOB Highlighter
+                  <span>Works with any EOB template using Azure Document Intelligence + Universal Coordinate Converter</span>
                 </button>
                 <button 
                   className={`option ${conversionMode === 'guided' ? 'active' : ''}`}
