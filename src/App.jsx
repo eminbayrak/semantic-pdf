@@ -5,6 +5,7 @@ import PDFToHTMLTest from './components/Test/PDFToHTMLTest';
 import SemanticPDFConverter from './components/Test/SemanticPDFConverter';
 import HybridPDFConverter from './components/Test/HybridPDFConverter';
 import GuidedPresentation from './components/Test/GuidedPresentation';
+import GuidedPresentationWithZoom from './components/Test/GuidedPresentationWithZoom';
 import './App.css';
 
 /**
@@ -17,7 +18,7 @@ function App() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
-  const [conversionMode, setConversionMode] = useState('guided'); // 'layout', 'semantic', 'hybrid', 'guided'
+  const [conversionMode, setConversionMode] = useState('guided-zoom'); // 'layout', 'semantic', 'hybrid', 'guided', 'guided-zoom'
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   // Check environment variables
@@ -68,6 +69,8 @@ function App() {
         return <SemanticPDFConverter />;
       case 'hybrid':
         return <HybridPDFConverter />;
+      case 'guided-zoom':
+        return <GuidedPresentationWithZoom />;
       case 'guided':
       default:
         return <GuidedPresentation />;
@@ -83,6 +86,20 @@ function App() {
         <div className="header-content">
           <h1>PDF to Guided Presentation</h1>
           <p>Transform your PDFs into interactive, narrated presentations</p>
+          {conversionMode === 'guided-zoom' && (
+            <div style={{ 
+              background: 'linear-gradient(135deg, #667eea, #764ba2)', 
+              color: 'white', 
+              padding: '8px 16px', 
+              borderRadius: '20px', 
+              fontSize: '14px', 
+              fontWeight: '600',
+              marginTop: '8px',
+              display: 'inline-block'
+            }}>
+              🔍 Zoom-Enabled Mode Active
+            </div>
+          )}
         </div>
         
         {/* Settings Dropdown */}
@@ -113,6 +130,13 @@ function App() {
                 >
                   🎬 Guided Presentation
                   <span>AI-powered step-by-step presentation with audio</span>
+                </button>
+                <button 
+                  className={`option ${conversionMode === 'guided-zoom' ? 'active' : ''}`}
+                  onClick={() => handleConversionModeChange('guided-zoom')}
+                >
+                  🔍 Guided Presentation with Zoom
+                  <span>AI-powered presentation with zoom controls for easy reading</span>
                 </button>
                 <button 
                   className={`option ${conversionMode === 'layout' ? 'active' : ''}`}

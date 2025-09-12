@@ -731,18 +731,153 @@ const GuidedPresentation = () => {
     <title>Guided Presentation - Page ${pageNumber}</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; background: #1a1a1a; color: white; }
+        body { font-family: Arial, sans-serif; background: #1a1a1a; color: white; overflow: hidden; }
         .container { display: flex; height: 100vh; }
-        .pdf-viewer { flex: 1; background: white; position: relative; display: flex; align-items: center; justify-content: center; }
-        .pdf-background { width: ${canvasWidth}px; height: ${canvasHeight}px; z-index: 1; }
-        .highlight-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: ${canvasWidth}px; height: ${canvasHeight}px; z-index: 2; pointer-events: none; }
-        .highlight-element { position: absolute; border: 4px solid #ffd700; border-radius: 12px; background: transparent; opacity: 0; transform: scale(0.8); transition: all 0.5s; pointer-events: none; min-width: 120px; min-height: 60px; }
+        .pdf-viewer { 
+            flex: 1; 
+            background: white; 
+            position: relative; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            overflow: hidden;
+            cursor: grab;
+        }
+        .pdf-viewer.dragging { cursor: grabbing; }
+        .pdf-container { 
+            position: relative; 
+            transform-origin: center center;
+            transition: transform 0.3s ease;
+        }
+        .pdf-background { 
+            width: ${canvasWidth}px; 
+            height: ${canvasHeight}px; 
+            z-index: 1; 
+            user-select: none;
+            pointer-events: none;
+        }
+        .highlight-overlay { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: ${canvasWidth}px; 
+            height: ${canvasHeight}px; 
+            z-index: 2; 
+            pointer-events: none; 
+        }
+        .highlight-element { 
+            position: absolute; 
+            border: 4px solid #ffd700; 
+            border-radius: 12px; 
+            background: transparent; 
+            opacity: 0; 
+            transform: scale(0.8); 
+            transition: all 0.5s; 
+            pointer-events: none; 
+            min-width: 120px; 
+            min-height: 60px; 
+        }
         .highlight-element.needs-review { border-color: #ff6b6b; background: rgba(255, 107, 107, 0.1); }
-        .highlight-label { position: absolute; left: -50px; top: 50%; transform: translateY(-50%); background: #ffd700; color: #1a1a1a; font-weight: bold; font-size: 18px; width: 40px; height: 40px; border-radius: 50%; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); text-align: center; display: flex; align-items: center; justify-content: center; border: 3px solid #fff; line-height: 1; }
+        .highlight-label { 
+            position: absolute; 
+            left: -50px; 
+            top: 50%; 
+            transform: translateY(-50%); 
+            background: #ffd700; 
+            color: #1a1a1a; 
+            font-weight: bold; 
+            font-size: 18px; 
+            width: 40px; 
+            height: 40px; 
+            border-radius: 50%; 
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); 
+            text-align: center; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border: 3px solid #fff; 
+            line-height: 1; 
+        }
         .highlight-element.needs-review .highlight-label { background: #ff6b6b; }
-        .review-indicator { position: absolute; top: -10px; right: -10px; background: #ff6b6b; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; }
+        .review-indicator { 
+            position: absolute; 
+            top: -10px; 
+            right: -10px; 
+            background: #ff6b6b; 
+            color: white; 
+            border-radius: 50%; 
+            width: 20px; 
+            height: 20px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 12px; 
+            font-weight: bold; 
+        }
         .highlight-element.active { opacity: 1; transform: scale(1); }
         .highlight-element.prev { opacity: 0; transform: scale(0.8); }
+        
+        /* Zoom Controls */
+        .zoom-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: rgba(42, 42, 42, 0.9);
+            padding: 15px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+        }
+        .zoom-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 50%;
+            background: #ffd700;
+            color: #1a1a1a;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .zoom-btn:hover {
+            background: #ffed4e;
+            transform: scale(1.1);
+        }
+        .zoom-btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .zoom-level {
+            text-align: center;
+            color: #ffd700;
+            font-weight: bold;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        .zoom-to-fit-btn {
+            width: 100%;
+            padding: 8px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .zoom-to-fit-btn:hover {
+            background: #45a049;
+        }
+        
         .controls { width: 300px; background: #2a2a2a; padding: 20px; overflow-y: auto; }
         .controls h3 { margin-bottom: 20px; color: #ffd700; }
         .step-info { background: #333; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
@@ -769,13 +904,42 @@ const GuidedPresentation = () => {
         .element-item.needs-review .element-id { color: #ff6b6b; }
         .element-text { color: #ccc; font-size: 11px; margin-top: 5px; }
         .review-warning { color: #ff6b6b; font-size: 10px; margin-top: 5px; font-style: italic; }
+        
+        /* Zoom animations */
+        .zoom-transition {
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .zoom-controls {
+                top: 10px;
+                right: 10px;
+                padding: 10px;
+            }
+            .zoom-btn {
+                width: 35px;
+                height: 35px;
+                font-size: 16px;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="pdf-viewer">
-            <img src="${imageDataUrl}" alt="PDF Page ${pageNumber}" class="pdf-background">
-            <div class="highlight-overlay" id="highlightOverlay">
+        <div class="pdf-viewer" id="pdfViewer">
+            <!-- Zoom Controls -->
+            <div class="zoom-controls">
+                <button class="zoom-btn" id="zoomIn" title="Zoom In (Ctrl + Plus)">+</button>
+                <button class="zoom-btn" id="zoomOut" title="Zoom Out (Ctrl + Minus)">−</button>
+                <button class="zoom-to-fit-btn" id="zoomToFit" title="Zoom to Fit (Ctrl + 0)">Fit</button>
+                <div class="zoom-level" id="zoomLevel">100%</div>
+            </div>
+            
+            <!-- PDF Container -->
+            <div class="pdf-container" id="pdfContainer">
+                <img src="${imageDataUrl}" alt="PDF Page ${pageNumber}" class="pdf-background">
+                <div class="highlight-overlay" id="highlightOverlay">
                 ${alignedHighlights.map((highlight, index) => {
                     const x = highlight.x * scaleX;
                     const y = highlight.y * scaleY;
@@ -798,6 +962,7 @@ const GuidedPresentation = () => {
                         </div>
                     `;
                 }).join('')}
+                </div>
             </div>
         </div>
         
@@ -843,6 +1008,16 @@ const GuidedPresentation = () => {
         let audioContext = null;
         let currentAudio = null;
         
+        // Zoom functionality
+        let currentZoom = 1.0;
+        let minZoom = 0.25;
+        let maxZoom = 4.0;
+        let zoomStep = 0.25;
+        let isDragging = false;
+        let dragStart = { x: 0, y: 0 };
+        let currentPan = { x: 0, y: 0 };
+        let isPanning = false;
+        
         function updateStep(step) {
             currentStep = step;
             
@@ -877,6 +1052,11 @@ const GuidedPresentation = () => {
             document.querySelectorAll('.element-item').forEach((el, index) => {
                 el.classList.toggle('active', index === step);
             });
+            
+            // Auto-zoom to current element
+            if (typeof zoomToElement === 'function') {
+                zoomToElement(step);
+            }
         }
         
         function nextStep() {
