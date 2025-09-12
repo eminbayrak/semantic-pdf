@@ -1,6 +1,4 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { getEnvironmentStatus } from './utils/envChecker';
-import EnvironmentTest from './components/Services/EnvironmentTest';
 import PDFToHTMLTest from './components/Test/PDFToHTMLTest';
 import SemanticPDFConverter from './components/Test/SemanticPDFConverter';
 import HybridPDFConverter from './components/Test/HybridPDFConverter';
@@ -21,15 +19,6 @@ function App() {
   const [conversionMode, setConversionMode] = useState('guided-zoom'); // 'layout', 'semantic', 'hybrid', 'guided', 'guided-zoom'
   const [showAdvanced, setShowAdvanced] = useState(false);
 
-  // Check environment variables
-  React.useEffect(() => {
-    const envStatus = getEnvironmentStatus();
-    // console.log('Environment Status:', envStatus);
-
-    if (envStatus.status === 'error') {
-      setError(`Configuration Error: ${envStatus.message}. Please check your environment variables.`);
-    }
-  }, []);
 
   // Handle file upload
   const handleFileSelect = useCallback((file) => {
@@ -79,124 +68,23 @@ function App() {
 
   return (
     <div className="app">
-      <EnvironmentTest />
-      
-      {/* Modern Header */}
-      <header className="app-header">
-        <div className="header-left">
-          <div className="logo-section">
-            <div className="logo-icon">📄</div>
-            <div className="logo-text">
-              <h1>PDF to Guided Presentation</h1>
-              <p>Transform your PDFs into interactive, narrated presentations</p>
-            </div>
-          </div>
-          
-          {/* Mode Badge */}
-          {conversionMode === 'guided-zoom' && (
-            <div className="mode-badge">
-              <span className="badge-icon">🔍</span>
-              <span className="badge-text">Zoom-Enabled Mode</span>
-            </div>
-          )}
-        </div>
-        
-        {/* Modern Settings */}
-        <div className="header-right">
-          <div className="status-indicator">
-            <div className="status-dot"></div>
-            <span>Ready</span>
-          </div>
-          
-          <div className="settings-container">
-            <button 
-              className="settings-button"
-              onClick={() => setShowSettings(!showSettings)}
-              title="Conversion Options"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="3"></circle>
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+      {/* Modern Flat Header */}
+      <header className="flat-header">
+        <div className="header-container">
+          <div className="header-brand">
+            <div className="brand-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14,2 14,8 20,8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10,9 9,9 8,9"></polyline>
               </svg>
-            </button>
-            
-            {showSettings && (
-              <div className="settings-dropdown">
-                <div className="settings-header">
-                  <h3>Conversion Modes</h3>
-                  <button 
-                    className="close-settings"
-                    onClick={() => setShowSettings(false)}
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <line x1="18" y1="6" x2="6" y2="18"></line>
-                      <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                  </button>
-                </div>
-                <div className="settings-options">
-                  <button 
-                    className={`option ${conversionMode === 'guided-zoom' ? 'active' : ''}`}
-                    onClick={() => handleConversionModeChange('guided-zoom')}
-                  >
-                    <div className="option-icon">🔍</div>
-                    <div className="option-content">
-                      <div className="option-title">Guided Presentation with Zoom</div>
-                      <div className="option-description">AI-powered presentation with zoom controls for easy reading</div>
-                    </div>
-                    {conversionMode === 'guided-zoom' && <div className="option-check">✓</div>}
-                  </button>
-                  
-                  <button 
-                    className={`option ${conversionMode === 'guided' ? 'active' : ''}`}
-                    onClick={() => handleConversionModeChange('guided')}
-                  >
-                    <div className="option-icon">🎬</div>
-                    <div className="option-content">
-                      <div className="option-title">Guided Presentation</div>
-                      <div className="option-description">AI-powered step-by-step presentation with audio</div>
-                    </div>
-                    {conversionMode === 'guided' && <div className="option-check">✓</div>}
-                  </button>
-                  
-                  <button 
-                    className={`option ${conversionMode === 'layout' ? 'active' : ''}`}
-                    onClick={() => handleConversionModeChange('layout')}
-                  >
-                    <div className="option-icon">📄</div>
-                    <div className="option-content">
-                      <div className="option-title">Layout Preservation</div>
-                      <div className="option-description">Exact PDF layout with pixel-perfect conversion</div>
-                    </div>
-                    {conversionMode === 'layout' && <div className="option-check">✓</div>}
-                  </button>
-                  
-                  <button 
-                    className={`option ${conversionMode === 'semantic' ? 'active' : ''}`}
-                    onClick={() => handleConversionModeChange('semantic')}
-                  >
-                    <div className="option-icon">🏷️</div>
-                    <div className="option-content">
-                      <div className="option-title">Semantic HTML</div>
-                      <div className="option-description">Structured HTML with meaningful element IDs</div>
-                    </div>
-                    {conversionMode === 'semantic' && <div className="option-check">✓</div>}
-                  </button>
-                  
-                  <button 
-                    className={`option ${conversionMode === 'hybrid' ? 'active' : ''}`}
-                    onClick={() => handleConversionModeChange('hybrid')}
-                  >
-                    <div className="option-icon">🖼️</div>
-                    <div className="option-content">
-                      <div className="option-title">Hybrid (Image + Semantic)</div>
-                      <div className="option-description">PDF image background with semantic HTML overlay</div>
-                    </div>
-                    {conversionMode === 'hybrid' && <div className="option-check">✓</div>}
-                  </button>
-                </div>
-              </div>
-            )}
+            </div>
+            <div className="brand-text">
+              <h1>DocuFlow</h1>
+              <span className="brand-subtitle">Smart Document Processing</span>
+            </div>
           </div>
         </div>
       </header>
@@ -251,16 +139,16 @@ function App() {
         )}
       </main>
 
-      {/* Modern Footer */}
-      <footer className="app-footer">
-        <div className="footer-content">
-          <div className="footer-text">Powered by Azure AI Services</div>
-          <div className="footer-tech">
-            <span className="tech-item">GPT-4o</span>
-            <span className="tech-separator">•</span>
-            <span className="tech-item">Document Intelligence</span>
-            <span className="tech-separator">•</span>
-            <span className="tech-item">Speech Services</span>
+      {/* Compact Footer */}
+      <footer className="modern-footer">
+        <div className="footer-container">
+          <div className="footer-bottom">
+            <p>&copy; 2025 EOB Document Processor. All rights reserved.</p>
+            <div className="footer-links">
+              <a href="#" className="footer-link">Privacy Policy</a>
+              <a href="#" className="footer-link">Terms of Service</a>
+              <a href="#" className="footer-link">Support</a>
+            </div>
           </div>
         </div>
       </footer>

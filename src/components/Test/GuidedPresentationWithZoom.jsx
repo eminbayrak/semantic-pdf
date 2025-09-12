@@ -30,6 +30,8 @@ const GuidedPresentationWithZoom = () => {
   const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
   const [audioError, setAudioError] = useState(null);
   const [currentFile, setCurrentFile] = useState(null);
+  const [isDataProcessing, setIsDataProcessing] = useState(false);
+  const [isDataProcessingComplete, setIsDataProcessingComplete] = useState(false);
 
   // Handle file selection
   const handleFileSelect = async (event) => {
@@ -45,6 +47,8 @@ const GuidedPresentationWithZoom = () => {
       setNarrativeScript(null);
       setAudioData(null);
       setCurrentFile(file);
+      setIsDataProcessing(false);
+      setIsDataProcessingComplete(false);
 
       const arrayBuffer = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -52,6 +56,9 @@ const GuidedPresentationWithZoom = () => {
       setPdfDocument(pdf);
       setTotalPages(pdf.numPages);
       setCurrentPage(1);
+      
+      // Start data processing
+      setIsDataProcessing(true);
       
       // Load first page
       await loadPage(pdf, 1, file);
@@ -107,6 +114,13 @@ const GuidedPresentationWithZoom = () => {
       // Extract PDF text for GPT-4o analysis
       const pdfText = await extractPDFText(pdf, pageNumber);
       
+      // Mark data processing as complete before starting AI analysis
+      setIsDataProcessingComplete(true);
+      setIsDataProcessing(false);
+      
+      // Small delay to show the completed state
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       // Generate GPT-4o narrative script
       const generatedNarrative = await generateNarrativeScript(pdfText, htmlElements);
       
@@ -115,6 +129,9 @@ const GuidedPresentationWithZoom = () => {
       if (generatedNarrative && generatedNarrative.steps) {
         alignedHighlights = alignHTMLElementsWithNarration(htmlElements, generatedNarrative.steps);
       }
+      
+      // Small delay to show AI analysis completion
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       // Generate audio for the narrative script
       let generatedAudio = null;
@@ -509,21 +526,21 @@ const GuidedPresentationWithZoom = () => {
         }
         
         /* PDF View Section - Main Content */
-         .pdf-viewer { 
-             flex: 1; 
-             background: #ffffff; 
-             position: relative; 
-             display: flex; 
-             align-items: center; 
-             justify-content: center; 
-             overflow: hidden;
-             cursor: default;
-             margin: 16px;
-             border-radius: 12px;
-             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-             border: 1px solid #e2e8f0;
-         }
-         
+        .pdf-viewer { 
+            flex: 1; 
+            background: transparent; 
+            position: relative; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            overflow: hidden;
+            cursor: default;
+            margin: 16px;
+            border-radius: 0;
+            box-shadow: none;
+            border: none;
+        }
+        
          .pdf-container { 
              position: relative; 
              transform-origin: center center;
@@ -531,8 +548,8 @@ const GuidedPresentationWithZoom = () => {
              max-width: calc(100% - 20px);
              max-height: calc(100% - 20px);
              margin: 0 auto;
-             background: #ffffff;
-             border-radius: 8px;
+             background: transparent;
+             border-radius: 0;
              overflow: visible;
          }
         
@@ -701,11 +718,11 @@ const GuidedPresentationWithZoom = () => {
             top: 24px;
             left: 24px;
             width: 300px;
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
+            background: transparent;
+            border: none;
+            border-radius: 0;
             padding: 20px;
-            box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            box-shadow: none;
             z-index: 1000;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             transform: rotate(0deg);
@@ -714,7 +731,7 @@ const GuidedPresentationWithZoom = () => {
         
         .eob-summary-sticky:hover {
             transform: translateY(-2px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            box-shadow: none;
         }
         
         .eob-summary-header {
@@ -803,13 +820,13 @@ const GuidedPresentationWithZoom = () => {
             color: #1e293b;
             font-weight: 600;
         }
-
+        
         /* Right Side Panel - Slide Navigation */
         .slide-navigation {
             width: 320px;
-            background: #fff;
+            background: transparent;
             padding: 0;
-            border-left: 1px solid #e0e0e0;
+            border-left: none;
             display: flex;
             flex-direction: column;
             overflow-y: auto;
@@ -819,19 +836,13 @@ const GuidedPresentationWithZoom = () => {
         
         /* YouTube-style separator line */
         .slide-navigation::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 1px;
-            background: linear-gradient(to bottom, transparent, #e0e0e0, transparent);
+            display: none;
         }
         
         .slide-navigation-header {
             padding: 24px 20px 16px;
-            border-bottom: 1px solid #f0f0f0;
-            background: linear-gradient(135deg, #f8f9fa, #ffffff);
+            border-bottom: none;
+            background: transparent;
         }
         
         .slide-navigation h3 { 
@@ -956,8 +967,8 @@ const GuidedPresentationWithZoom = () => {
         /* Bottom Controls */
         .bottom-controls {
             padding: 20px;
-            border-top: 1px solid #f0f0f0;
-            background: linear-gradient(135deg, #f8f9fa, #ffffff);
+            border-top: none;
+            background: transparent;
         }
         
         .navigation-arrows {
@@ -1776,64 +1787,248 @@ const GuidedPresentationWithZoom = () => {
 
   return (
     <div className="guided-presentation-modern">
-      {/* Modern Upload Section */}
-      <div className="upload-section-modern">
-        <div className="upload-content">
-          <div className="upload-icon">📄</div>
-          <div className="upload-text">
-            <h3>Upload Your PDF</h3>
-            <p>Transform your document into an interactive, narrated presentation</p>
-          </div>
-        </div>
-        
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileSelect}
-          accept=".pdf"
-          style={{ display: 'none' }}
-        />
-        
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          disabled={isLoading}
-          className="upload-btn-modern"
-        >
-          {isLoading ? (
-            <>
-              <div className="btn-spinner"></div>
-              <span>Processing...</span>
-            </>
+
+      {/* Main Upload Section */}
+      <div className="main-upload-section">
+        <div className="upload-container">
+          {!currentFile ? (
+            <div className="upload-zone" 
+                 onClick={() => !isLoading && fileInputRef.current?.click()}
+                 onDragOver={(e) => e.preventDefault()}
+                 onDrop={(e) => {
+                   e.preventDefault();
+                   if (!isLoading && e.dataTransfer.files[0]) {
+                     handleFileSelect({ target: { files: e.dataTransfer.files } });
+                   }
+                 }}>
+              <div className="upload-icon">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14,2 14,8 20,8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                  <polyline points="10,9 9,9 8,9"></polyline>
+                </svg>
+              </div>
+              <h2>Upload Your EOB Document</h2>
+              <p>Drag and drop your PDF file here, or click to browse</p>
+              <div className="file-requirements">
+                <span>Supported format: PDF only</span>
+                <span>Maximum size: 10MB</span>
+              </div>
+            </div>
           ) : (
-            <>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                <polyline points="7,10 12,15 17,10"></polyline>
-                <line x1="12" y1="15" x2="12" y2="3"></line>
-              </svg>
-              <span>Choose PDF File</span>
-            </>
+            <div className="file-thumbnail">
+              <div className="thumbnail-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14,2 14,8 20,8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                  <polyline points="10,9 9,9 8,9"></polyline>
+                </svg>
+              </div>
+              <div className="file-info">
+                <div className="file-name">{currentFile.name}</div>
+                <div className="file-size">{(currentFile.size / 1024 / 1024).toFixed(2)} MB</div>
+              </div>
+              <button 
+                className="reset-button"
+                onClick={() => {
+                  setCurrentFile(null);
+                  setPdfDocument(null);
+                  setSemanticData([]);
+                  setCurrentStep(0);
+                  setIsPlaying(false);
+                  setNarrativeScript(null);
+                  setAudioData(null);
+                  setPresentationHTML('');
+                  setIsDataProcessing(false);
+                  setIsDataProcessingComplete(false);
+                  setIsGeneratingNarrative(false);
+                  setIsGeneratingAudio(false);
+                  setError(null);
+                  setNarrativeError(null);
+                  setAudioError(null);
+                }}
+                title="Remove file and start over"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M3 6h18"></path>
+                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                  <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                  <line x1="10" y1="11" x2="10" y2="17"></line>
+                  <line x1="14" y1="11" x2="14" y2="17"></line>
+                </svg>
+              </button>
+            </div>
           )}
-        </button>
+          
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileSelect}
+            accept=".pdf"
+            style={{ display: 'none' }}
+            aria-label="Upload EOB PDF document"
+          />
+        </div>
       </div>
 
-      {/* Modern Status Messages */}
+      {/* Process Steps Workflow */}
+      {(isLoading || isGeneratingNarrative || isGeneratingAudio || presentationHTML) && (
+        <div className="process-workflow">
+          <h3>Processing Your Document</h3>
+          <div className="workflow-steps">
+            {/* Step 1: Document Upload */}
+            <div className={`workflow-step ${currentFile ? 'completed' : ''}`}>
+              <div className="step-icon">
+                {currentFile ? (
+                  <div className="step-checkmark">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                      <polyline points="20,6 9,17 4,12"></polyline>
+              </svg>
+                  </div>
+                ) : (
+                  <div className="step-number">1</div>
+          )}
+      </div>
+              <div className="step-content">
+                <div className="step-title">Document Upload</div>
+                <div className="step-description">PDF file received and validated</div>
+          </div>
+              <div className="step-connector"></div>
+        </div>
+
+            {/* Step 2: Data Processing */}
+            <div className={`workflow-step ${isDataProcessing ? 'active' : isDataProcessingComplete ? 'completed' : ''}`}>
+              <div className="step-icon">
+                {isDataProcessing ? (
+                  <div className="step-loader">
+                    <div className="loader-ring"></div>
+                  </div>
+                ) : isDataProcessingComplete ? (
+                  <div className="step-checkmark">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                      <polyline points="20,6 9,17 4,12"></polyline>
+                    </svg>
+                  </div>
+                ) : (
+                  <div className="step-number">2</div>
+                )}
+              </div>
+              <div className="step-content">
+                <div className="step-title">Data Processing</div>
+                <div className="step-description">Extracting text and coordinates from document</div>
+              </div>
+              <div className="step-connector"></div>
+            </div>
+
+            {/* Step 3: AI Analysis */}
+            <div className={`workflow-step ${isGeneratingNarrative ? 'active' : (narrativeScript ? 'completed' : '')}`}>
+              <div className="step-icon">
+                {isGeneratingNarrative ? (
+                  <div className="step-loader">
+                    <div className="loader-ring"></div>
+          </div>
+                ) : narrativeScript ? (
+                  <div className="step-checkmark">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                      <polyline points="20,6 9,17 4,12"></polyline>
+                    </svg>
+        </div>
+                ) : (
+                  <div className="step-number">3</div>
+                )}
+              </div>
+              <div className="step-content">
+                <div className="step-title">AI Analysis</div>
+                <div className="step-description">Generating semantic narrative and EOB summary</div>
+              </div>
+              <div className="step-connector"></div>
+            </div>
+
+            {/* Step 4: Audio Generation */}
+            <div className={`workflow-step ${isGeneratingAudio ? 'active' : (audioData ? 'completed' : '')}`}>
+              <div className="step-icon">
+                {isGeneratingAudio ? (
+                  <div className="step-loader">
+                    <div className="loader-ring"></div>
+          </div>
+                ) : audioData ? (
+                  <div className="step-checkmark">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                      <polyline points="20,6 9,17 4,12"></polyline>
+                    </svg>
+        </div>
+                ) : (
+                  <div className="step-number">4</div>
+                )}
+            </div>
+              <div className="step-content">
+                <div className="step-title">Audio Generation</div>
+                <div className="step-description">Creating synchronized narration for each step</div>
+              </div>
+              <div className="step-connector"></div>
+          </div>
+          
+            {/* Step 5: Presentation Ready */}
+            <div className={`workflow-step ${presentationHTML ? 'completed' : ''}`}>
+              <div className="step-icon">
+                {presentationHTML ? (
+                  <div className="step-checkmark">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                      <polyline points="20,6 9,17 4,12"></polyline>
+                </svg>
+              </div>
+                ) : (
+                  <div className="step-number">5</div>
+                )}
+              </div>
+              <div className="step-content">
+                <div className="step-title">Presentation Ready</div>
+                <div className="step-description">Interactive presentation with zoom controls generated</div>
+              </div>
+            </div>
+            </div>
+            
+          {/* Download Button - Only show when presentation is ready */}
+          {presentationHTML && (
+            <div className="download-section">
+              <button
+                onClick={() => {
+                  const blob = new Blob([presentationHTML], { type: 'text/html' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `guided-presentation-with-zoom-page-${currentPage}.html`;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  URL.revokeObjectURL(url);
+                }}
+                className="download-btn"
+                aria-label="Download HTML presentation with zoom controls"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7,10 12,15 17,10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Download HTML with Zoom
+              </button>
+            </div>
+          )}
+          </div>
+      )}
+
+      {/* Status Messages */}
       {error && (
         <div className="status-message-modern error">
           <div className="status-icon">⚠️</div>
           <div className="status-content">
             <div className="status-title">Upload Error</div>
             <div className="status-description">{error}</div>
-          </div>
-        </div>
-      )}
-
-      {isGeneratingNarrative && (
-        <div className="status-message-modern generating">
-          <div className="status-spinner"></div>
-          <div className="status-content">
-            <div className="status-title">Generating narrative script...</div>
-            <div className="status-description">Using GPT-4o to create step-by-step presentation</div>
           </div>
         </div>
       )}
@@ -1848,16 +2043,6 @@ const GuidedPresentationWithZoom = () => {
         </div>
       )}
 
-      {isGeneratingAudio && (
-        <div className="status-message-modern generating">
-          <div className="status-spinner"></div>
-          <div className="status-content">
-            <div className="status-title">Generating audio narration...</div>
-            <div className="status-description">Creating synchronized audio for each step</div>
-          </div>
-        </div>
-      )}
-
       {audioError && (
         <div className="status-message-modern error">
           <div className="status-icon">❌</div>
@@ -1868,85 +2053,573 @@ const GuidedPresentationWithZoom = () => {
         </div>
       )}
 
-      {/* Modern Presentation Section */}
-      {presentationHTML && (
-        <div className="presentation-section-modern">
-          <div className="presentation-header-modern">
-            <div className="presentation-icon">🎬</div>
-            <div className="presentation-text">
-              <h2>Your Guided Presentation is Ready!</h2>
-              <p>Interactive presentation with zoom controls and audio narration</p>
-            </div>
-          </div>
-          
-          <div className="presentation-controls-modern">
-            <div className="page-controls-modern">
-              <button 
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                disabled={currentPage <= 1}
-                className="page-button-modern"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polyline points="15,18 9,12 15,6"></polyline>
-                </svg>
-                Previous
-              </button>
-              <div className="page-info-modern">
-                <span className="page-current">{currentPage}</span>
-                <span className="page-separator">of</span>
-                <span className="page-total">{totalPages}</span>
-              </div>
-              <button 
-                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage >= totalPages}
-                className="page-button-modern"
-              >
-                Next
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polyline points="9,18 15,12 9,6"></polyline>
-                </svg>
-              </button>
-            </div>
-            
-            <div className="action-section-modern">
-              <button
-                onClick={() => {
-                  const blob = new Blob([presentationHTML], { type: 'text/html' });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url;
-                  a.download = `guided-presentation-with-zoom-page-${currentPage}.html`;
-                  document.body.appendChild(a);
-                  a.click();
-                  document.body.removeChild(a);
-                  URL.revokeObjectURL(url);
-                }}
-                className="action-button-modern"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="7,10 12,15 17,10"></polyline>
-                  <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
-                Download HTML with Zoom
-              </button>
-            </div>
-          </div>
-          
-          <div className="presentation-preview-modern">
-            <iframe
-              srcDoc={presentationHTML}
-              title="Guided Presentation with Zoom"
-              className="presentation-iframe-modern"
-            />
-          </div>
-        </div>
-      )}
-
       <canvas
         ref={canvasRef}
         style={{ display: 'none' }}
       />
+
+
+      <style jsx>{`
+        .guided-presentation-modern {
+          min-height: auto;
+          background: transparent;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+          padding: 0;
+          margin: 0;
+        }
+
+        /* Main Upload Section */
+        .main-upload-section {
+          padding: 16px 20px;
+          max-width: 1200px;
+          margin: 0 auto;
+        }
+
+        .upload-container {
+          display: flex;
+          justify-content: center;
+        }
+
+        .upload-zone {
+          border: 4px dashed #ff6b35;
+          border-radius: 8px;
+          padding: 20px 16px;
+          text-align: center;
+          background: #ffffff;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          max-width: 500px;
+          width: 100%;
+        }
+
+        .upload-zone:hover {
+          border-color: #e55a2b;
+          background: #fff7f4;
+        }
+
+        .upload-zone:focus {
+          outline: 2px solid #ff6b35;
+          outline-offset: 2px;
+        }
+
+        .upload-icon {
+          color: #ff6b35;
+          margin-bottom: 12px;
+          display: flex;
+          justify-content: center;
+        }
+
+        .upload-zone:hover .upload-icon {
+          color: #e55a2b;
+        }
+
+        .upload-zone h2 {
+          font-size: 18px;
+          font-weight: 600;
+          color: #1e293b;
+          margin: 0 0 6px 0;
+        }
+
+        .upload-zone p {
+          font-size: 14px;
+          color: #64748b;
+          margin: 0 0 12px 0;
+        }
+
+        .file-requirements {
+          display: flex;
+          gap: 16px;
+          justify-content: center;
+          font-size: 12px;
+          color: #94a3b8;
+        }
+
+        /* File Thumbnail */
+        .file-thumbnail {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 16px 20px;
+          background: #ffffff;
+          border: 2px solid #e2e8f0;
+          border-radius: 8px;
+          max-width: 400px;
+          width: 100%;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .thumbnail-icon {
+          color: #ff6b35;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 40px;
+          height: 40px;
+          background: #fff7f4;
+          border-radius: 8px;
+          flex-shrink: 0;
+        }
+
+        .file-info {
+          flex: 1;
+          min-width: 0;
+        }
+
+        .file-name {
+          font-size: 14px;
+          font-weight: 600;
+          color: #1e293b;
+          margin-bottom: 4px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .file-size {
+          font-size: 12px;
+          color: #64748b;
+        }
+
+        .reset-button {
+          background: #ef4444;
+          color: white;
+          border: none;
+          border-radius: 6px;
+          width: 32px;
+          height: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          flex-shrink: 0;
+        }
+
+        .reset-button:hover {
+          background: #dc2626;
+          transform: scale(1.05);
+        }
+
+        .reset-button:active {
+          transform: scale(0.95);
+        }
+
+        /* Process Workflow */
+        .process-workflow {
+          background: transparent;
+          border-radius: 0;
+          padding: 16px;
+          margin: 16px;
+          border: none;
+        }
+
+        .process-workflow h3 {
+          font-size: 16px;
+          font-weight: 600;
+          color: #1e293b;
+          margin: 0 0 16px 0;
+          text-align: center;
+        }
+
+        .workflow-steps {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          position: relative;
+          margin-bottom: 16px;
+        }
+
+        .workflow-step {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          flex: 1;
+          position: relative;
+          z-index: 2;
+        }
+
+        .step-icon {
+          width: 56px;
+          height: 56px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: 12px;
+          transition: all 0.3s ease;
+          background: #f1f5f9;
+          color: #64748b;
+          border: 3px solid #e2e8f0;
+          position: relative;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .workflow-step.active .step-icon {
+          background: #1e3a8a;
+          color: #ffffff;
+          border-color: #1e3a8a;
+          box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3);
+          transform: scale(1.05);
+        }
+
+        .workflow-step.completed .step-icon {
+          background: #22c55e;
+          color: #ffffff;
+          border-color: #22c55e;
+          box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+        }
+
+        /* Step Number */
+        .step-number {
+          font-size: 20px;
+          font-weight: 700;
+          color: #64748b;
+        }
+
+        .workflow-step.active .step-number {
+          color: #ffffff;
+        }
+
+        /* Step Checkmark */
+        .step-checkmark {
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #ffffff;
+        }
+
+        /* Step Loader */
+        .step-loader {
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .loader-ring {
+          width: 28px;
+          height: 28px;
+          border: 3px solid rgba(255, 255, 255, 0.3);
+          border-top: 3px solid #ffffff;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+
+        .step-content {
+          text-align: center;
+          max-width: 180px;
+        }
+
+        .step-title {
+          font-size: 14px;
+          font-weight: 600;
+          color: #1e293b;
+          margin-bottom: 4px;
+        }
+
+        .workflow-step.active .step-title {
+          color: #1e3a8a;
+        }
+
+        .workflow-step.completed .step-title {
+          color: #22c55e;
+        }
+
+        .step-description {
+          font-size: 12px;
+          color: #64748b;
+          line-height: 1.4;
+        }
+
+        .step-connector {
+          position: absolute;
+          top: 32px;
+          left: calc(50% + 32px);
+          right: calc(-50% + 32px);
+          height: 3px;
+          background: #e2e8f0;
+          z-index: 1;
+          border-radius: 2px;
+        }
+
+        .workflow-step.completed + .workflow-step .step-connector {
+          background: #22c55e;
+        }
+
+        /* Download Section */
+        .download-section {
+          text-align: center;
+          padding-top: 16px;
+          border-top: 1px solid #e2e8f0;
+        }
+
+        .download-btn {
+          background: #1e3a8a;
+          color: white;
+          border: none;
+          border-radius: 6px;
+          padding: 12px 24px;
+          font-size: 16px;
+          font-weight: 600;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          transition: all 0.2s ease;
+        }
+
+        .download-btn:hover {
+          background: #1e40af;
+        }
+
+        .download-btn:focus {
+          outline: 2px solid #1e3a8a;
+          outline-offset: 2px;
+        }
+
+        /* Status Messages */
+        .status-message-modern {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 16px 24px;
+          border-radius: 6px;
+          margin: 16px 32px;
+          font-weight: 500;
+        }
+
+        .status-message-modern.error {
+          background: #fef2f2;
+          border: 1px solid #fecaca;
+          color: #dc2626;
+        }
+
+        .status-message-modern.generating {
+          background: #f0f9ff;
+          border: 1px solid #bae6fd;
+          color: #0369a1;
+        }
+
+        .status-icon {
+          font-size: 20px;
+        }
+
+        .status-spinner {
+          width: 20px;
+          height: 20px;
+          border: 2px solid #e0e7ff;
+          border-top: 2px solid #2563eb;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+
+        .status-content {
+          flex: 1;
+        }
+
+        .status-title {
+          font-weight: 600;
+          margin-bottom: 4px;
+        }
+
+        .status-description {
+          font-size: 14px;
+          opacity: 0.8;
+        }
+
+        /* Modern Footer 2025 */
+        .modern-footer {
+          background: #1e293b;
+          color: #e2e8f0;
+          margin-top: 80px;
+        }
+
+        .footer-container {
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 48px 32px 24px;
+        }
+
+        .footer-content {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 32px;
+          padding-bottom: 32px;
+          border-bottom: 1px solid #334155;
+        }
+
+        .footer-brand {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .footer-icon {
+          color: #60a5fa;
+          display: flex;
+          align-items: center;
+        }
+
+        .footer-brand span {
+          font-size: 16px;
+          font-weight: 600;
+          color: #f1f5f9;
+        }
+
+        .footer-tech {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          font-size: 14px;
+          color: #94a3b8;
+        }
+
+        .tech-item {
+          font-weight: 500;
+        }
+
+        .tech-separator {
+          color: #475569;
+        }
+
+        .footer-bottom {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          font-size: 14px;
+          color: #94a3b8;
+        }
+
+        .footer-bottom p {
+          margin: 0;
+        }
+
+        .footer-links {
+          display: flex;
+          gap: 24px;
+        }
+
+        .footer-link {
+          color: #94a3b8;
+          text-decoration: none;
+          transition: color 0.2s ease;
+        }
+
+        .footer-link:hover {
+          color: #60a5fa;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+          .header-container {
+            padding: 8px 16px;
+          }
+
+          .main-upload-section {
+            padding: 16px;
+          }
+
+          .upload-zone {
+            padding: 24px 16px;
+            max-width: 100%;
+          }
+
+          .file-thumbnail {
+            padding: 12px 16px;
+            max-width: 100%;
+          }
+
+          .file-name {
+            font-size: 13px;
+          }
+
+          .file-size {
+            font-size: 11px;
+          }
+
+          .reset-button {
+            width: 28px;
+            height: 28px;
+          }
+
+          .process-workflow {
+            margin: 12px;
+            padding: 16px;
+          }
+
+          .workflow-steps {
+            flex-direction: column;
+            gap: 20px;
+          }
+
+          .step-connector {
+            display: none;
+          }
+
+          .step-icon {
+            width: 48px;
+            height: 48px;
+          }
+
+          .step-content {
+            max-width: 200px;
+          }
+
+          .step-title {
+            font-size: 13px;
+          }
+
+          .step-description {
+            font-size: 11px;
+          }
+
+          .file-requirements {
+            flex-direction: column;
+            gap: 6px;
+            font-size: 12px;
+          }
+
+          .footer-container {
+            padding: 32px 20px 20px;
+          }
+
+          .footer-content {
+            flex-direction: column;
+            gap: 24px;
+            text-align: center;
+          }
+
+          .footer-tech {
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+          }
+
+          .footer-bottom {
+            flex-direction: column;
+            gap: 16px;
+            text-align: center;
+          }
+
+          .footer-links {
+            gap: 16px;
+          }
+        }
+      `}</style>
     </div>
   );
 };
