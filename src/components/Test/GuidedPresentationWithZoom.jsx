@@ -718,17 +718,18 @@ const GuidedPresentationWithZoom = () => {
             top: 24px;
             left: 24px;
             width: 300px;
-            background: rgba(255, 255, 255, 0.2);
+            max-width: calc(100vw - 48px);
+            background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 8px;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 12px;
             padding: 20px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
             z-index: 1000;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             transform: rotate(0deg);
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
         }
         
         .eob-summary-sticky:hover {
@@ -742,6 +743,32 @@ const GuidedPresentationWithZoom = () => {
             margin-bottom: 16px;
             border-bottom: 1px solid #e2e8f0;
             padding-bottom: 12px;
+            position: relative;
+        }
+
+        .eob-toggle-btn {
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: none;
+            font-size: 16px;
+            color: #64748b;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            display: none;
+        }
+
+        .eob-toggle-btn:hover {
+            background: rgba(0, 0, 0, 0.1);
+            color: #374151;
+        }
+
+        .eob-toggle-btn.rotated {
+            transform: translateY(-50%) rotate(180deg);
         }
         
         .eob-summary-icon {
@@ -1179,6 +1206,14 @@ const GuidedPresentationWithZoom = () => {
         }
         
         /* Responsive design */
+        @media (max-width: 1024px) {
+            /* EOB Summary - Tablet adjustments */
+            .eob-summary-sticky {
+                width: 280px;
+                max-width: calc(50vw - 24px);
+            }
+        }
+
         @media (max-width: 768px) {
             .container {
                 flex-direction: column;
@@ -1252,36 +1287,108 @@ const GuidedPresentationWithZoom = () => {
                 font-size: 12px;
             }
             
-            /* EOB Summary Sticky Note - Mobile */
+            /* EOB Summary Sticky Note - Mobile - Collapsible */
             .eob-summary-sticky {
                 position: fixed;
                 top: 12px;
                 left: 12px;
                 right: 12px;
                 width: auto;
-                background: rgba(255, 255, 255, 0.2);
+                max-width: none;
+                background: rgba(255, 255, 255, 0.95);
                 backdrop-filter: blur(10px);
                 -webkit-backdrop-filter: blur(10px);
-                border: 1px solid rgba(255, 255, 255, 0.3);
-                border-radius: 8px;
-                box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-                transform: rotate(0deg);
+                border: 2px solid rgba(255, 255, 255, 0.5);
+                border-radius: 12px;
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+                transform: translateY(-100%);
                 z-index: 1001;
-                max-height: 220px;
+                max-height: 50vh;
                 overflow-y: auto;
                 padding: 16px;
+                transition: transform 0.3s ease;
+            }
+            
+            .eob-summary-sticky.show {
+                transform: translateY(0);
             }
             
             .eob-summary-sticky:hover {
-                transform: translateY(-1px);
+                transform: translateY(-100%);
+            }
+
+            .eob-toggle-btn {
+                display: block;
+            }
+
+            .eob-summary-content {
+                max-height: 0;
+                overflow: hidden;
+                transition: max-height 0.3s ease;
+            }
+
+            .eob-summary-sticky.show .eob-summary-content {
+                max-height: 300px;
             }
             
             .eob-summary-content {
+                font-size: 14px;
+            }
+            
+            .eob-summary-row {
+                margin-bottom: 8px;
+            }
+            
+            .eob-summary-services {
+                margin-top: 12px;
+                padding-top: 12px;
+            }
+            
+            .eob-summary-service {
                 font-size: 13px;
+                margin-bottom: 6px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            /* EOB Summary - Small mobile - Always visible but compact */
+            .eob-summary-sticky {
+                position: fixed;
+                top: 8px;
+                left: 8px;
+                right: 8px;
+                width: auto;
+                max-width: none;
+                background: rgba(255, 255, 255, 0.98);
+                backdrop-filter: blur(15px);
+                -webkit-backdrop-filter: blur(15px);
+                border: 3px solid rgba(255, 255, 255, 0.8);
+                border-radius: 16px;
+                box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+                transform: translateY(0);
+                z-index: 1001;
+                max-height: 40vh;
+                overflow-y: auto;
+                padding: 12px;
+                font-size: 12px;
+            }
+            
+            .eob-summary-header {
+                margin-bottom: 12px;
+                padding-bottom: 8px;
+            }
+            
+            .eob-summary-title {
+                font-size: 16px;
+            }
+            
+            .eob-summary-content {
+                font-size: 12px;
             }
             
             .eob-summary-row {
                 margin-bottom: 6px;
+                padding: 4px 0;
             }
             
             .eob-summary-services {
@@ -1290,7 +1397,7 @@ const GuidedPresentationWithZoom = () => {
             }
             
             .eob-summary-service {
-                font-size: 12px;
+                font-size: 11px;
                 margin-bottom: 4px;
             }
         }
@@ -1299,10 +1406,11 @@ const GuidedPresentationWithZoom = () => {
 <body>
     <div class="container">
         <!-- EOB Summary Sticky Note -->
-        <div class="eob-summary-sticky">
+        <div class="eob-summary-sticky" id="eobSummary">
             <div class="eob-summary-header">
                 <div class="eob-summary-icon">📋</div>
                 <h3 class="eob-summary-title">EOB Summary</h3>
+                <button class="eob-toggle-btn" id="eobToggle" aria-label="Toggle EOB summary visibility">▼</button>
             </div>
             <div class="eob-summary-content">
                 <div class="eob-summary-row">
@@ -1871,12 +1979,40 @@ const GuidedPresentationWithZoom = () => {
             
             updateZoom();
         }
+
+        // Initialize EOB Summary Toggle
+        function initializeEOBToggle() {
+            const eobSummary = document.getElementById('eobSummary');
+            const eobToggle = document.getElementById('eobToggle');
+            
+            if (eobSummary && eobToggle) {
+                // Show EOB summary by default on mobile
+                if (window.innerWidth <= 768) {
+                    eobSummary.classList.add('show');
+                }
+                
+                eobToggle.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    eobSummary.classList.toggle('show');
+                    eobToggle.classList.toggle('rotated');
+                    
+                    // Update aria-label
+                    const isExpanded = eobSummary.classList.contains('show');
+                    eobToggle.setAttribute('aria-label', 
+                        isExpanded ? 'Hide EOB summary' : 'Show EOB summary'
+                    );
+                });
+            }
+        }
         
         // Initialize with YouTube-style behavior
         updateStep(0);
         updatePlayButton();
         updateSubtitle();
         initializeZoom();
+        initializeEOBToggle();
         
         // Hide video controls initially, show center play button
         const videoControls = document.querySelector('.video-controls');
@@ -1955,6 +2091,15 @@ const GuidedPresentationWithZoom = () => {
                    if (!isLoading && e.dataTransfer.files[0]) {
                      handleFileSelect({ target: { files: e.dataTransfer.files } });
                    }
+                 }}
+                 role="button"
+                 tabIndex="0"
+                 aria-label="Upload EOB PDF document by clicking or dragging and dropping"
+                 onKeyDown={(e) => {
+                   if (e.key === 'Enter' || e.key === ' ') {
+                     e.preventDefault();
+                     if (!isLoading) fileInputRef.current?.click();
+                   }
                  }}>
               <div className="upload-icon">
                 <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -1967,14 +2112,14 @@ const GuidedPresentationWithZoom = () => {
               </div>
               <h2>Upload Your EOB Document</h2>
               <p>Drag and drop your PDF file here, or click to browse</p>
-              <div className="file-requirements">
-                <span>Supported format: PDF only</span>
-                <span>Maximum size: 10MB</span>
+              <div className="file-requirements" role="list" aria-label="File requirements" id="file-requirements">
+                <span role="listitem">Supported format: PDF only</span>
+                <span role="listitem">Maximum size: 10MB</span>
               </div>
             </div>
           ) : (
-            <div className="file-thumbnail">
-              <div className="thumbnail-icon">
+            <div className="file-thumbnail" role="region" aria-label="Selected file information">
+              <div className="thumbnail-icon" aria-hidden="true">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                   <polyline points="14,2 14,8 20,8"></polyline>
@@ -1984,8 +2129,8 @@ const GuidedPresentationWithZoom = () => {
                 </svg>
               </div>
               <div className="file-info">
-                <div className="file-name">{currentFile.name}</div>
-                <div className="file-size">{(currentFile.size / 1024 / 1024).toFixed(2)} MB</div>
+                <div className="file-name" aria-label={`File name: ${currentFile.name}`}>{currentFile.name}</div>
+                <div className="file-size" aria-label={`File size: ${(currentFile.size / 1024 / 1024).toFixed(2)} MB`}>{(currentFile.size / 1024 / 1024).toFixed(2)} MB</div>
               </div>
               <button 
                 className="reset-button"
@@ -2007,6 +2152,7 @@ const GuidedPresentationWithZoom = () => {
                   setAudioError(null);
                 }}
                 title="Remove file and start over"
+                aria-label="Remove selected file and start over"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -2023,18 +2169,19 @@ const GuidedPresentationWithZoom = () => {
             accept=".pdf"
             style={{ display: 'none' }}
             aria-label="Upload EOB PDF document"
+            aria-describedby="file-requirements"
           />
         </div>
       </div>
 
       {/* Process Steps Workflow */}
       {(isLoading || isGeneratingNarrative || isGeneratingAudio || presentationHTML) && (
-        <div className="process-workflow">
+        <div className="process-workflow" role="region" aria-label="Document processing workflow">
           <h3>Processing Your Document</h3>
-          <div className="workflow-steps">
+          <div className="workflow-steps" role="list" aria-label="Processing steps">
             {/* Step 1: Document Upload */}
-            <div className={`workflow-step ${currentFile ? 'completed' : ''}`}>
-              <div className="step-icon">
+            <div className={`workflow-step ${currentFile ? 'completed' : ''}`} role="listitem" aria-label="Step 1: Document Upload">
+              <div className="step-icon" aria-hidden="true">
                 {currentFile ? (
                   <div className="step-checkmark">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
@@ -2049,12 +2196,12 @@ const GuidedPresentationWithZoom = () => {
                 <div className="step-title">Document Upload</div>
                 <div className="step-description">PDF file received and validated</div>
           </div>
-              <div className="step-connector"></div>
+              <div className="step-connector" aria-hidden="true"></div>
         </div>
 
             {/* Step 2: Data Processing */}
-            <div className={`workflow-step ${isDataProcessing ? 'active' : isDataProcessingComplete ? 'completed' : ''}`}>
-              <div className="step-icon">
+            <div className={`workflow-step ${isDataProcessing ? 'active' : isDataProcessingComplete ? 'completed' : ''}`} role="listitem" aria-label={`Step 2: Data Processing ${isDataProcessing ? 'in progress' : isDataProcessingComplete ? 'completed' : 'pending'}`}>
+              <div className="step-icon" aria-hidden="true">
                 {isDataProcessing ? (
                   <div className="step-loader">
                     <div className="loader-ring"></div>
@@ -2073,12 +2220,12 @@ const GuidedPresentationWithZoom = () => {
                 <div className="step-title">Data Processing</div>
                 <div className="step-description">Extracting text and coordinates from document</div>
               </div>
-              <div className="step-connector"></div>
+              <div className="step-connector" aria-hidden="true"></div>
             </div>
 
             {/* Step 3: AI Analysis */}
-            <div className={`workflow-step ${isGeneratingNarrative ? 'active' : (narrativeScript ? 'completed' : '')}`}>
-              <div className="step-icon">
+            <div className={`workflow-step ${isGeneratingNarrative ? 'active' : (narrativeScript ? 'completed' : '')}`} role="listitem" aria-label={`Step 3: AI Analysis ${isGeneratingNarrative ? 'in progress' : narrativeScript ? 'completed' : 'pending'}`}>
+              <div className="step-icon" aria-hidden="true">
                 {isGeneratingNarrative ? (
                   <div className="step-loader">
                     <div className="loader-ring"></div>
@@ -2097,12 +2244,12 @@ const GuidedPresentationWithZoom = () => {
                 <div className="step-title">AI Analysis</div>
                 <div className="step-description">Generating semantic narrative and EOB summary</div>
               </div>
-              <div className="step-connector"></div>
+              <div className="step-connector" aria-hidden="true"></div>
             </div>
 
             {/* Step 4: Audio Generation */}
-            <div className={`workflow-step ${isGeneratingAudio ? 'active' : (audioData ? 'completed' : '')}`}>
-              <div className="step-icon">
+            <div className={`workflow-step ${isGeneratingAudio ? 'active' : (audioData ? 'completed' : '')}`} role="listitem" aria-label={`Step 4: Audio Generation ${isGeneratingAudio ? 'in progress' : audioData ? 'completed' : 'pending'}`}>
+              <div className="step-icon" aria-hidden="true">
                 {isGeneratingAudio ? (
                   <div className="step-loader">
                     <div className="loader-ring"></div>
@@ -2121,12 +2268,12 @@ const GuidedPresentationWithZoom = () => {
                 <div className="step-title">Audio Generation</div>
                 <div className="step-description">Creating synchronized narration for each step</div>
               </div>
-              <div className="step-connector"></div>
+              <div className="step-connector" aria-hidden="true"></div>
           </div>
           
             {/* Step 5: Presentation Ready */}
-            <div className={`workflow-step ${presentationHTML ? 'completed' : ''}`}>
-              <div className="step-icon">
+            <div className={`workflow-step ${presentationHTML ? 'completed' : ''}`} role="listitem" aria-label={`Step 5: Presentation Ready ${presentationHTML ? 'completed' : 'pending'}`}>
+              <div className="step-icon" aria-hidden="true">
                 {presentationHTML ? (
                   <div className="step-checkmark">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
@@ -2160,7 +2307,8 @@ const GuidedPresentationWithZoom = () => {
                   URL.revokeObjectURL(url);
                 }}
                 className="download-btn"
-                aria-label="Download presentation"
+                aria-label="Download interactive presentation with zoom controls"
+                title="Download the generated presentation as an HTML file"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -2176,8 +2324,8 @@ const GuidedPresentationWithZoom = () => {
 
       {/* Status Messages */}
       {error && (
-        <div className="status-message-modern error">
-          <div className="status-icon">⚠️</div>
+        <div className="status-message-modern error" role="alert" aria-live="polite">
+          <div className="status-icon" aria-hidden="true">⚠️</div>
           <div className="status-content">
             <div className="status-title">Upload Error</div>
             <div className="status-description">{error}</div>
@@ -2186,8 +2334,8 @@ const GuidedPresentationWithZoom = () => {
       )}
 
       {narrativeError && (
-        <div className="status-message-modern error">
-          <div className="status-icon">❌</div>
+        <div className="status-message-modern error" role="alert" aria-live="polite">
+          <div className="status-icon" aria-hidden="true">❌</div>
           <div className="status-content">
             <div className="status-title">Failed to generate narrative script</div>
             <div className="status-description">{narrativeError}</div>
@@ -2196,8 +2344,8 @@ const GuidedPresentationWithZoom = () => {
       )}
 
       {audioError && (
-        <div className="status-message-modern error">
-          <div className="status-icon">❌</div>
+        <div className="status-message-modern error" role="alert" aria-live="polite">
+          <div className="status-icon" aria-hidden="true">❌</div>
           <div className="status-content">
             <div className="status-title">Failed to generate audio</div>
             <div className="status-description">{audioError}</div>
@@ -2220,7 +2368,7 @@ const GuidedPresentationWithZoom = () => {
           margin: 0;
         }
 
-        /* Main Upload Section */
+        /* Main Upload Section - Compact Design */
         .main-upload-section {
           padding: 16px 20px;
           max-width: 1200px;
@@ -2233,74 +2381,103 @@ const GuidedPresentationWithZoom = () => {
         }
 
         .upload-zone {
-          border: 4px dashed #ff642b;
+          border: 3px dashed #ff642b;
           border-radius: 8px;
-          padding: 20px 16px;
+          padding: 24px 20px;
           text-align: center;
           background: #ffffff;
           cursor: pointer;
-          transition: all 0.2s ease;
+          transition: all 0.3s ease;
           max-width: 500px;
           width: 100%;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+          position: relative;
         }
 
         .upload-zone:hover {
           border-color: #e55a2b;
           background: #fff7f4;
+          transform: translateY(-2px);
+          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
         }
 
         .upload-zone:focus {
-          outline: 2px solid #ff642b;
-          outline-offset: 2px;
+          outline: 4px solid #ff642b;
+          outline-offset: 4px;
+          border-color: #e55a2b;
+        }
+
+        .upload-zone:focus-visible {
+          outline: 4px solid #ff642b;
+          outline-offset: 4px;
         }
 
         .upload-icon {
           color: #ff642b;
-          margin-bottom: 12px;
+          margin-bottom: 16px;
           display: flex;
           justify-content: center;
+          font-size: 36px;
         }
 
         .upload-zone:hover .upload-icon {
           color: #e55a2b;
+          transform: scale(1.05);
         }
 
         .upload-zone h2 {
           font-size: 22px;
           font-weight: 700;
           color: #1e293b;
-          margin: 0 0 8px 0;
+          margin: 0 0 12px 0;
           letter-spacing: -0.025em;
+          line-height: 1.3;
         }
 
         .upload-zone p {
           font-size: 16px;
-          color: #64748b;
+          color: #374151;
           margin: 0 0 16px 0;
-          font-weight: 400;
+          font-weight: 500;
+          line-height: 1.4;
         }
 
         .file-requirements {
           display: flex;
-          gap: 20px;
+          gap: 24px;
           justify-content: center;
           font-size: 14px;
-          color: #94a3b8;
-          font-weight: 500;
+          color: #6b7280;
+          font-weight: 600;
+          margin-top: 4px;
         }
 
-        /* File Thumbnail */
+        .file-requirements span {
+          background: #f3f4f6;
+          padding: 6px 12px;
+          border-radius: 6px;
+          border: 1px solid #e5e7eb;
+        }
+
+        /* File Thumbnail - Compact Design */
         .file-thumbnail {
           display: flex;
           align-items: center;
-          gap: 12px;
+          gap: 16px;
           padding: 16px 20px;
           background: #ffffff;
           border: 2px solid #e2e8f0;
           border-radius: 8px;
-          max-width: 400px;
+          max-width: 450px;
           width: 100%;
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+          transition: all 0.3s ease;
+        }
+
+        .file-thumbnail:hover {
+          border-color: #ff642b;
+          transform: translateY(-2px);
+          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
         }
 
         .thumbnail-icon {
@@ -2308,11 +2485,12 @@ const GuidedPresentationWithZoom = () => {
           display: flex;
           align-items: center;
           justify-content: center;
-          width: 40px;
-          height: 40px;
+          width: 48px;
+          height: 48px;
           background: #fff7f4;
           border-radius: 50%;
           flex-shrink: 0;
+          font-size: 24px;
         }
 
         .file-info {
@@ -2329,31 +2507,33 @@ const GuidedPresentationWithZoom = () => {
           overflow: hidden;
           text-overflow: ellipsis;
           letter-spacing: -0.01em;
+          line-height: 1.3;
         }
 
         .file-size {
           font-size: 14px;
-          color: #64748b;
-          font-weight: 500;
+          color: #374151;
+          font-weight: 600;
         }
 
         .reset-button {
-          background: transparent !important;
+          background: #fef2f2 !important;
           color: #ef4444 !important;
-          border: none !important;
-          border-radius: 6px;
-          width: 40px !important;
-          height: 40px !important;
+          border: 2px solid #fecaca !important;
+          border-radius: 8px;
+          width: 48px !important;
+          height: 48px !important;
           display: flex !important;
           align-items: center;
           justify-content: center;
           cursor: pointer;
-          transition: all 0.2s ease;
+          transition: all 0.3s ease;
           flex-shrink: 0;
           padding: 0 !important;
           font-size: 0 !important;
           font-weight: normal !important;
           gap: 0 !important;
+          box-shadow: 0 2px 6px rgba(239, 68, 68, 0.2);
         }
 
         .reset-button svg {
@@ -2361,33 +2541,44 @@ const GuidedPresentationWithZoom = () => {
           height: 20px !important;
           display: block !important;
           stroke: currentColor !important;
+          stroke-width: 2.5 !important;
         }
 
         .reset-button:hover {
-          background: #fef2f2;
-          color: #dc2626;
+          background: #fee2e2 !important;
+          color: #dc2626 !important;
+          border-color: #fca5a5 !important;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
         }
 
         .reset-button:active {
           transform: scale(0.95);
         }
 
-        /* Process Workflow */
+        .reset-button:focus {
+          outline: 4px solid #fecaca;
+          outline-offset: 2px;
+        }
+
+        /* Process Workflow - Compact Design */
         .process-workflow {
           background: transparent;
           border-radius: 0;
-          padding: 16px;
-          margin: 16px;
+          padding: 16px 0;
+          margin: 16px 0;
           border: none;
+          box-shadow: none;
         }
 
         .process-workflow h3 {
           font-size: 24px;
           font-weight: 700;
           color: #1e293b;
-          margin: 0 0 32px 0;
+          margin: 0 0 20px 0;
           text-align: center;
           letter-spacing: -0.025em;
+          line-height: 1.2;
         }
 
         .workflow-steps {
@@ -2395,8 +2586,9 @@ const GuidedPresentationWithZoom = () => {
           justify-content: space-between;
           align-items: flex-start;
           position: relative;
-          margin-bottom: 24px;
-          padding: 0 20px;
+          margin-bottom: 20px;
+          padding: 0 16px;
+          gap: 8px;
         }
 
         .workflow-step {
@@ -2406,34 +2598,39 @@ const GuidedPresentationWithZoom = () => {
           flex: 1;
           position: relative;
           z-index: 2;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          transition: all 0.2s ease;
+          padding: 8px;
+          border-radius: 0;
+          background: transparent;
         }
 
         .workflow-step:hover {
-          transform: translateY(-2px);
+          transform: none;
+          background: transparent;
+          box-shadow: none;
         }
 
         .step-icon {
-          width: 56px;
-          height: 56px;
+          width: 50px;
+          height: 50px;
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
-          margin-bottom: 12px;
-          transition: all 0.3s ease;
+          margin-bottom: 8px;
+          transition: all 0.2s ease;
           background: #f1f5f9;
           color: #64748b;
-          border: 3px solid #e2e8f0;
+          border: 2px solid #e2e8f0;
           position: relative;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
         }
 
         .workflow-step.active .step-icon {
           background: #002677;
           color: #ffffff;
           border-color: #002677;
-          box-shadow: 0 4px 12px rgba(0, 38, 119, 0.3);
+          box-shadow: 0 3px 8px rgba(0, 38, 119, 0.3);
           transform: scale(1.05);
         }
 
@@ -2441,12 +2638,12 @@ const GuidedPresentationWithZoom = () => {
           background: #22c55e;
           color: #ffffff;
           border-color: #22c55e;
-          box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+          box-shadow: 0 3px 8px rgba(34, 197, 94, 0.3);
         }
 
         /* Step Number */
         .step-number {
-          font-size: 20px;
+          font-size: 18px;
           font-weight: 700;
           color: #64748b;
         }
@@ -2490,15 +2687,16 @@ const GuidedPresentationWithZoom = () => {
 
         .step-content {
           text-align: center;
-          max-width: 180px;
+          max-width: 140px;
         }
 
         .step-title {
-          font-size: 16px;
+          font-size: 14px;
           font-weight: 700;
           color: #1e293b;
-          margin-bottom: 8px;
+          margin-bottom: 4px;
           letter-spacing: -0.01em;
+          line-height: 1.2;
         }
 
         .workflow-step.active .step-title {
@@ -2510,28 +2708,28 @@ const GuidedPresentationWithZoom = () => {
         }
 
         .step-description {
-          font-size: 14px;
-          color: #64748b;
-          line-height: 1.5;
-          font-weight: 400;
+          font-size: 11px;
+          color: #374151;
+          line-height: 1.3;
+          font-weight: 500;
         }
 
         .step-connector {
           position: absolute;
-          top: 32px;
-          left: calc(50% + 32px);
-          right: calc(-50% + 32px);
-          height: 3px;
+          top: 29px;
+          left: calc(50% + 29px);
+          right: calc(-50% + 29px);
+          height: 2px;
           background: #e2e8f0;
           z-index: 1;
-          border-radius: 2px;
+          border-radius: 1px;
         }
 
         .workflow-step.completed .step-connector {
           background: #22c55e;
         }
 
-        /* Download Section */
+        /* Download Section - Compact Design */
         .download-section {
           text-align: center;
           padding-top: 16px;
@@ -2552,54 +2750,66 @@ const GuidedPresentationWithZoom = () => {
           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           box-shadow: 0 4px 12px rgba(0, 38, 119, 0.3);
           letter-spacing: -0.01em;
+          min-height: 48px;
+          border: 2px solid transparent;
         }
 
         .download-btn:hover {
           background: linear-gradient(135deg, #003d99 0%, #0044aa 100%);
           transform: translateY(-2px);
-          box-shadow: 0 8px 20px rgba(0, 38, 119, 0.4);
+          box-shadow: 0 8px 16px rgba(0, 38, 119, 0.4);
+          border-color: #60a5fa;
         }
 
         .download-btn:active {
-          transform: translateY(0);
-          box-shadow: 0 2px 8px rgba(0, 38, 119, 0.3);
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(0, 38, 119, 0.3);
         }
 
         .download-btn:focus {
           outline: 3px solid rgba(0, 38, 119, 0.3);
-          outline-offset: 2px;
+          outline-offset: 3px;
+          border-color: #60a5fa;
         }
 
-        /* Status Messages */
+        .download-btn svg {
+          width: 20px;
+          height: 20px;
+        }
+
+        /* Status Messages - Compact Design */
         .status-message-modern {
           display: flex;
           align-items: center;
-          gap: 12px;
+          gap: 16px;
           padding: 16px 24px;
-          border-radius: 6px;
-          margin: 16px 32px;
-          font-weight: 500;
+          border-radius: 8px;
+          margin: 12px 24px;
+          font-weight: 600;
+          border: 2px solid;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
         .status-message-modern.error {
           background: #fef2f2;
-          border: 1px solid #fecaca;
+          border-color: #fecaca;
           color: #dc2626;
         }
 
         .status-message-modern.generating {
           background: #f0f9ff;
-          border: 1px solid #bae6fd;
+          border-color: #bae6fd;
           color: #0369a1;
         }
 
         .status-icon {
-          font-size: 20px;
+          font-size: 24px;
+          flex-shrink: 0;
         }
 
         .status-spinner {
-          width: 20px;
-          height: 20px;
+          width: 24px;
+          height: 24px;
           border: 2px solid #e0e7ff;
           border-top: 2px solid #2563eb;
           border-radius: 50%;
@@ -2616,13 +2826,16 @@ const GuidedPresentationWithZoom = () => {
         }
 
         .status-title {
-          font-weight: 600;
+          font-weight: 700;
           margin-bottom: 4px;
+          font-size: 16px;
+          line-height: 1.2;
         }
 
         .status-description {
           font-size: 14px;
-          opacity: 0.8;
+          opacity: 0.9;
+          line-height: 1.4;
         }
 
         /* Modern Footer 2025 */
@@ -2708,47 +2921,110 @@ const GuidedPresentationWithZoom = () => {
           color: #60a5fa;
         }
 
-        /* Responsive Design */
+        /* High Contrast Mode Support */
+        @media (prefers-contrast: high) {
+          .upload-zone {
+            border-width: 6px;
+            border-color: #000;
+          }
+          
+          .file-thumbnail {
+            border-width: 4px;
+            border-color: #000;
+          }
+          
+          .download-btn {
+            border-width: 4px;
+            border-color: #000;
+          }
+          
+          .status-message-modern {
+            border-width: 4px;
+          }
+        }
+
+        /* Reduced Motion Support */
+        @media (prefers-reduced-motion: reduce) {
+          .upload-zone,
+          .file-thumbnail,
+          .download-btn,
+          .reset-button,
+          .workflow-step,
+          .step-icon {
+            transition: none;
+            transform: none;
+          }
+          
+          .upload-zone:hover,
+          .file-thumbnail:hover,
+          .download-btn:hover,
+          .reset-button:hover,
+          .workflow-step:hover {
+            transform: none;
+          }
+        }
+
+        /* Responsive Design - Enhanced for Elderly Users */
         @media (max-width: 768px) {
           .header-container {
-            padding: 8px 16px;
+            padding: 12px 20px;
           }
 
           .main-upload-section {
-            padding: 16px;
+            padding: 20px 16px;
           }
 
           .upload-zone {
-            padding: 24px 16px;
+            padding: 32px 20px;
             max-width: 100%;
           }
 
+          .upload-zone h2 {
+            font-size: 24px;
+          }
+
+          .upload-zone p {
+            font-size: 18px;
+          }
+
+          .file-requirements {
+            flex-direction: column;
+            gap: 12px;
+            font-size: 16px;
+          }
+
           .file-thumbnail {
-            padding: 12px 16px;
+            padding: 20px 24px;
             max-width: 100%;
           }
 
           .file-name {
-            font-size: 13px;
+            font-size: 18px;
           }
 
           .file-size {
-            font-size: 11px;
+            font-size: 16px;
           }
 
           .reset-button {
-            width: 36px;
-            height: 36px;
+            width: 56px;
+            height: 56px;
           }
 
           .process-workflow {
-            margin: 12px;
-            padding: 16px;
+            margin: 12px 8px;
+            padding: 16px 12px;
+          }
+
+          .process-workflow h3 {
+            font-size: 20px;
+            margin-bottom: 16px;
           }
 
           .workflow-steps {
             flex-direction: column;
-            gap: 20px;
+            gap: 16px;
+            padding: 0 8px;
           }
 
           .step-connector {
@@ -2756,8 +3032,12 @@ const GuidedPresentationWithZoom = () => {
           }
 
           .step-icon {
-            width: 48px;
-            height: 48px;
+            width: 40px;
+            height: 40px;
+          }
+
+          .step-number {
+            font-size: 16px;
           }
 
           .step-content {
@@ -2765,17 +3045,30 @@ const GuidedPresentationWithZoom = () => {
           }
 
           .step-title {
-            font-size: 15px;
+            font-size: 14px;
           }
 
           .step-description {
-            font-size: 13px;
+            font-size: 12px;
           }
 
-          .file-requirements {
-            flex-direction: column;
-            gap: 8px;
-            font-size: 13px;
+          .download-btn {
+            padding: 12px 24px;
+            font-size: 16px;
+            min-height: 44px;
+          }
+
+          .status-message-modern {
+            margin: 8px 12px;
+            padding: 12px 16px;
+          }
+
+          .status-title {
+            font-size: 14px;
+          }
+
+          .status-description {
+            font-size: 12px;
           }
 
           .footer-container {
