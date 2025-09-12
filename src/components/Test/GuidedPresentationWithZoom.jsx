@@ -651,8 +651,8 @@ const GuidedPresentationWithZoom = () => {
             width: 40px;
             height: 40px;
             border: none;
-            border-radius: 8px;
-            background: #3b82f6;
+            border-radius: 50%;
+            background: #002677;
             color: white;
             font-size: 18px;
             font-weight: 600;
@@ -661,13 +661,13 @@ const GuidedPresentationWithZoom = () => {
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            box-shadow: 0 1px 3px 0 rgba(0, 38, 119, 0.3), 0 1px 2px 0 rgba(0, 38, 119, 0.06);
         }
         
         .zoom-btn:hover {
-            background: #2563eb;
+            background: #003d99;
             transform: translateY(-1px);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            box-shadow: 0 4px 6px -1px rgba(0, 38, 119, 0.4), 0 2px 4px -1px rgba(0, 38, 119, 0.06);
         }
         
         .zoom-btn:active {
@@ -695,7 +695,7 @@ const GuidedPresentationWithZoom = () => {
         .zoom-to-fit-btn {
             width: 100%;
             padding: 8px 12px;
-            background: #10b981;
+            background: #ff642b;
             color: white;
             border: none;
             border-radius: 6px;
@@ -707,9 +707,9 @@ const GuidedPresentationWithZoom = () => {
         }
         
         .zoom-to-fit-btn:hover {
-            background: #059669;
+            background: #e55a2b;
             transform: translateY(-1px);
-            box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 4px -1px rgba(255, 100, 43, 0.3);
         }
         
         /* EOB Summary Sticky Note */
@@ -718,11 +718,13 @@ const GuidedPresentationWithZoom = () => {
             top: 24px;
             left: 24px;
             width: 300px;
-            background: transparent;
-            border: none;
-            border-radius: 0;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
             padding: 20px;
-            box-shadow: none;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
             z-index: 1000;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             transform: rotate(0deg);
@@ -824,14 +826,19 @@ const GuidedPresentationWithZoom = () => {
         /* Right Side Panel - Slide Navigation */
         .slide-navigation {
             width: 320px;
-            background: transparent;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
             padding: 0;
-            border-left: none;
             display: flex;
             flex-direction: column;
             overflow-y: auto;
             flex-shrink: 0;
             position: relative;
+            margin: 8px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
         }
         
         /* YouTube-style separator line */
@@ -847,7 +854,7 @@ const GuidedPresentationWithZoom = () => {
         
         .slide-navigation h3 { 
             margin: 0 0 8px 0; 
-            color: #1976d2; 
+            color: #002677; 
             font-weight: 700;
             font-size: 20px;
             text-align: left;
@@ -878,17 +885,17 @@ const GuidedPresentationWithZoom = () => {
         
         .slide-item:hover {
             background: #f8f9fa;
-            border-left-color: #e3f2fd;
+            border-left-color: #ff642b;
         }
         
         .slide-item.active {
             background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
-            border-left-color: #1976d2;
+            border-left-color: #002677;
         }
         
         .slide-item.completed {
             background: linear-gradient(135deg, #e8f5e8, #f1f8e9);
-            border-left-color: #4caf50;
+            border-left-color: #22c55e;
         }
         
         .slide-number {
@@ -907,9 +914,9 @@ const GuidedPresentationWithZoom = () => {
         }
         
         .slide-item.active .slide-number {
-            background: #1976d2;
+            background: #002677;
             color: white;
-            box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+            box-shadow: 0 4px 12px rgba(0, 38, 119, 0.3);
         }
         
         .slide-item.completed .slide-number {
@@ -928,9 +935,8 @@ const GuidedPresentationWithZoom = () => {
             color: #333;
             margin: 0 0 4px 0;
             line-height: 1.3;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
         
         .slide-preview {
@@ -938,10 +944,8 @@ const GuidedPresentationWithZoom = () => {
             color: #666;
             margin: 0;
             line-height: 1.4;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
         
         .slide-status {
@@ -956,8 +960,8 @@ const GuidedPresentationWithZoom = () => {
         }
         
         .slide-item.active .slide-status {
-            background: #1976d2;
-            box-shadow: 0 0 8px rgba(25, 118, 210, 0.4);
+            background: #002677;
+            box-shadow: 0 0 8px rgba(0, 38, 119, 0.4);
         }
         
         .slide-item.completed .slide-status {
@@ -982,8 +986,8 @@ const GuidedPresentationWithZoom = () => {
             width: 44px;
             height: 44px;
             border: none;
-            border-radius: 10px;
-            background: #3b82f6;
+            border-radius: 50%;
+            background: #002677;
             color: white;
             font-size: 18px;
             font-weight: 600;
@@ -992,13 +996,13 @@ const GuidedPresentationWithZoom = () => {
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.06);
+            box-shadow: 0 2px 4px -1px rgba(0, 38, 119, 0.3), 0 1px 2px -1px rgba(0, 38, 119, 0.06);
         }
         
         .nav-arrow:hover {
-            background: #2563eb;
+            background: #003d99;
             transform: translateY(-1px);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            box-shadow: 0 4px 6px -1px rgba(0, 38, 119, 0.4), 0 2px 4px -1px rgba(0, 38, 119, 0.06);
         }
         
         .nav-arrow:disabled {
@@ -1026,7 +1030,7 @@ const GuidedPresentationWithZoom = () => {
             bottom: 0;
             left: 0;
             right: 0;
-            background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+            background: transparent;
             padding: 24px;
             z-index: 10;
             pointer-events: none;
@@ -1035,65 +1039,119 @@ const GuidedPresentationWithZoom = () => {
         
         .video-controls {
             display: flex;
+            flex-direction: column;
             align-items: center;
             gap: 12px;
             pointer-events: auto;
         }
         
         .play-pause-btn {
-            width: 52px;
-            height: 52px;
-            border-radius: 12px;
-            border: none;
-            background: rgba(255, 255, 255, 0.95);
-            color: #1e293b;
-            font-size: 20px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            position: fixed !important;
+            left: 20px !important;
+            bottom: 30px !important;
+            width: 60px !important;
+            height: 60px !important;
+            border-radius: 50% !important;
+            border: none !important;
+            background: #ff642b !important;
+            color: white !important;
+            font-size: 20px !important;
+            cursor: pointer !important;
+            transition: all 0.2s ease !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            box-shadow: 0 6px 12px rgba(255, 100, 43, 0.4) !important;
+            z-index: 1000 !important;
         }
         
         .play-pause-btn:hover {
-            background: #ffffff;
-            transform: scale(1.05);
-            box-shadow: 0 6px 8px -1px rgba(0, 0, 0, 0.1), 0 4px 6px -1px rgba(0, 0, 0, 0.06);
+            background: #e55a2b !important;
+            transform: scale(1.05) !important;
+            box-shadow: 0 6px 8px -1px rgba(255, 100, 43, 0.4), 0 4px 6px -1px rgba(255, 100, 43, 0.06) !important;
         }
         
         .play-pause-btn.playing {
-            background: #dc2626;
-            color: white;
+            background: #002677 !important;
+            color: white !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 38, 119, 0.3), 0 2px 4px -1px rgba(0, 38, 119, 0.06) !important;
         }
         
         .video-subtitle {
-            flex: 1;
-            color: white;
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #1e293b;
             font-size: 16px;
-            font-weight: 500;
+            font-weight: 600;
             line-height: 1.5;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
-            max-width: 70%;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            text-align: center;
+            padding: 12px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+            max-width: 60%;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            white-space: normal;
+            z-index: 999;
+        }
+        
+        /* Center Play Button for Presentation Start */
+        .center-play-button {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: none;
+            background: #ff642b;
+            color: white;
+            font-size: 32px;
+            cursor: pointer;
+            z-index: 1001;
+            box-shadow: 0 8px 24px rgba(255, 100, 43, 0.4);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .center-play-button:hover {
+            background: #e55a2b;
+            transform: translate(-50%, -50%) scale(1.1);
+            box-shadow: 0 12px 32px rgba(255, 100, 43, 0.6);
+        }
+        
+        .center-play-button.hidden {
+            display: none;
+        }
+        
+        .center-play-button::before {
+            content: '▶';
+            margin-left: 4px;
         }
         
         .video-progress {
-            position: absolute;
+            position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
             height: 4px;
             background: rgba(255, 255, 255, 0.2);
             z-index: 11;
-            border-radius: 0 0 12px 12px;
+            border-radius: 0;
         }
         
         .video-progress-fill {
             height: 100%;
-            background: #dc2626;
+            background: #ff642b;
             width: 0%;
             transition: width 0.1s ease;
             border-radius: 0 0 12px 12px;
@@ -1115,7 +1173,7 @@ const GuidedPresentationWithZoom = () => {
         
         .progress-fill { 
             height: 100%; 
-            background: #3b82f6; 
+            background: #ff642b; 
             width: 0%; 
             transition: width 0.3s ease; 
         }
@@ -1201,6 +1259,12 @@ const GuidedPresentationWithZoom = () => {
                 left: 12px;
                 right: 12px;
                 width: auto;
+                background: rgba(255, 255, 255, 0.2);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.3);
+                border-radius: 8px;
+                box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
                 transform: rotate(0deg);
                 z-index: 1001;
                 max-height: 220px;
@@ -1299,15 +1363,20 @@ const GuidedPresentationWithZoom = () => {
             </div>
             
             <!-- YouTube-style Video Player Controls -->
+            <!-- Center Play Button for Presentation Start -->
+            <button class="center-play-button" id="centerPlayBtn" onclick="startPresentation()"></button>
+            
             <div class="video-player-overlay">
-                <div class="video-controls">
-                    <button class="play-pause-btn" id="playPauseBtn" onclick="togglePlay()">▶</button>
-                    <div class="video-subtitle" id="videoSubtitle">Click play to start the presentation</div>
-                </div>
                 <div class="video-progress">
                     <div class="video-progress-fill" id="progressFill"></div>
                 </div>
             </div>
+            
+            <!-- Independent Floating Play Button (Left Side) -->
+            <button class="play-pause-btn" id="playPauseBtn" onclick="togglePlay()">▶</button>
+            
+            <!-- Independent Floating Subtitle Text (Center) -->
+            <div class="video-subtitle" id="videoSubtitle">Click play to start the presentation</div>
             
             <!-- PDF Container -->
             <div class="pdf-container" id="pdfContainer">
@@ -1476,7 +1545,25 @@ const GuidedPresentationWithZoom = () => {
             }
         }
         
+        function startPresentation() {
+            // Hide center play button and show video controls
+            const centerBtn = document.getElementById('centerPlayBtn');
+            const videoControls = document.querySelector('.video-controls');
+            
+            if (centerBtn) {
+                centerBtn.classList.add('hidden');
+            }
+            
+            if (videoControls) {
+                videoControls.style.display = 'flex';
+            }
+            
+            // Start the presentation
+            startPlay();
+        }
+        
         function togglePlay() {
+            // YouTube-style behavior: single click toggles play/pause
             if (isPlaying) {
                 pausePlay();
             } else {
@@ -1484,44 +1571,88 @@ const GuidedPresentationWithZoom = () => {
             }
         }
         
+        // YouTube-style keyboard shortcuts
+        function handleKeyPress(event) {
+            // Space bar or Enter key toggles play/pause (YouTube standard)
+            if (event.code === 'Space' || event.code === 'Enter') {
+                event.preventDefault();
+                togglePlay();
+            }
+            // Arrow keys for navigation (YouTube standard)
+            else if (event.code === 'ArrowLeft') {
+                event.preventDefault();
+                goToPreviousStep();
+            }
+            else if (event.code === 'ArrowRight') {
+                event.preventDefault();
+                goToNextStep();
+            }
+        }
+        
         function updatePlayButton() {
             const playBtn = document.getElementById('playPauseBtn');
             if (!playBtn) return;
             
+            // YouTube-style icon updates with better visual feedback
             if (isPlaying) {
                 playBtn.textContent = '⏸';
                 playBtn.classList.add('playing');
+                playBtn.setAttribute('aria-label', 'Pause presentation');
             } else {
                 playBtn.textContent = '▶';
                 playBtn.classList.remove('playing');
+                playBtn.setAttribute('aria-label', 'Play presentation');
             }
+        }
+        
+        // YouTube-style click anywhere to play/pause (on video area)
+        function handleVideoClick(event) {
+            // Only trigger if clicking on the video area, not on controls
+            if (event.target.classList.contains('video-player-overlay') || 
+                event.target.classList.contains('video-controls')) {
+                return; // Don't trigger if clicking on controls
+            }
+            
+            // Click on video area toggles play/pause (YouTube behavior)
+            togglePlay();
         }
         
         function updateSubtitle() {
             const subtitleText = document.getElementById('videoSubtitle');
             if (!subtitleText) return;
             
-            if (narrativeScript && narrativeScript.steps && narrativeScript.steps[currentStep]) {
+            // Check if presentation has started (center button is hidden)
+            const centerBtn = document.getElementById('centerPlayBtn');
+            const isPresentationStarted = centerBtn && centerBtn.classList.contains('hidden');
+            
+            if (isPresentationStarted && narrativeScript && narrativeScript.steps && narrativeScript.steps[currentStep]) {
                 const stepData = narrativeScript.steps[currentStep];
                 subtitleText.textContent = stepData.narrative || elements[currentStep]?.text || 'No description available';
-            } else if (elements && elements[currentStep]) {
+            } else if (isPresentationStarted && elements && elements[currentStep]) {
                 subtitleText.textContent = elements[currentStep].text || 'No description available';
-            } else {
+            } else if (isPresentationStarted) {
                 subtitleText.textContent = 'Click play to start the presentation';
+            } else {
+                subtitleText.textContent = 'Click the play button to start the presentation';
             }
         }
         
         function startPlay() {
+            // YouTube-style: immediate visual feedback
             isPlaying = true;
             updatePlayButton();
+            
+            // YouTube-style: start from current step
             updateStep(currentStep);
             
             if (audioData && audioData.length > 0 && audioData[currentStep] && audioData[currentStep].audioData) {
                 playStepAudio(currentStep);
             } else {
-                // Auto-advance without audio
+                // YouTube-style: auto-advance with smooth transitions
                 playInterval = setInterval(() => {
-                    nextStep();
+                    if (isPlaying) { // Check if still playing (YouTube behavior)
+                        nextStep();
+                    }
                 }, 3000);
             }
         }
@@ -1554,14 +1685,17 @@ const GuidedPresentationWithZoom = () => {
         }
         
         function pausePlay() {
+            // YouTube-style: immediate pause with visual feedback
             isPlaying = false;
             updatePlayButton();
             updateStep(currentStep);
             
+            // YouTube-style: pause audio immediately
             if (currentAudio) {
                 currentAudio.pause();
             }
             
+            // YouTube-style: stop auto-advance
             if (playInterval) {
                 clearInterval(playInterval);
                 playInterval = null;
@@ -1738,11 +1872,32 @@ const GuidedPresentationWithZoom = () => {
             updateZoom();
         }
         
-        // Initialize
+        // Initialize with YouTube-style behavior
         updateStep(0);
         updatePlayButton();
         updateSubtitle();
         initializeZoom();
+        
+        // Hide video controls initially, show center play button
+        const videoControls = document.querySelector('.video-controls');
+        const centerBtn = document.getElementById('centerPlayBtn');
+        
+        if (videoControls) {
+            videoControls.style.display = 'none';
+        }
+        
+        if (centerBtn) {
+            centerBtn.classList.remove('hidden');
+        }
+        
+        // Add YouTube-style event listeners
+        document.addEventListener('keydown', handleKeyPress);
+        
+        // Add click-to-play functionality on video area
+        const videoContainer = document.querySelector('.pdf-container');
+        if (videoContainer) {
+            videoContainer.addEventListener('click', handleVideoClick);
+        }
         
          // Set initial zoom to a reasonable level
          currentZoom = 1.5;
@@ -2078,7 +2233,7 @@ const GuidedPresentationWithZoom = () => {
         }
 
         .upload-zone {
-          border: 4px dashed #ff6b35;
+          border: 4px dashed #ff642b;
           border-radius: 8px;
           padding: 20px 16px;
           text-align: center;
@@ -2095,12 +2250,12 @@ const GuidedPresentationWithZoom = () => {
         }
 
         .upload-zone:focus {
-          outline: 2px solid #ff6b35;
+          outline: 2px solid #ff642b;
           outline-offset: 2px;
         }
 
         .upload-icon {
-          color: #ff6b35;
+          color: #ff642b;
           margin-bottom: 12px;
           display: flex;
           justify-content: center;
@@ -2149,14 +2304,14 @@ const GuidedPresentationWithZoom = () => {
         }
 
         .thumbnail-icon {
-          color: #ff6b35;
+          color: #ff642b;
           display: flex;
           align-items: center;
           justify-content: center;
           width: 40px;
           height: 40px;
           background: #fff7f4;
-          border-radius: 8px;
+          border-radius: 50%;
           flex-shrink: 0;
         }
 
@@ -2275,10 +2430,10 @@ const GuidedPresentationWithZoom = () => {
         }
 
         .workflow-step.active .step-icon {
-          background: #1e3a8a;
+          background: #002677;
           color: #ffffff;
-          border-color: #1e3a8a;
-          box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3);
+          border-color: #002677;
+          box-shadow: 0 4px 12px rgba(0, 38, 119, 0.3);
           transform: scale(1.05);
         }
 
@@ -2347,7 +2502,7 @@ const GuidedPresentationWithZoom = () => {
         }
 
         .workflow-step.active .step-title {
-          color: #1e3a8a;
+          color: #002677;
         }
 
         .workflow-step.completed .step-title {
@@ -2383,7 +2538,7 @@ const GuidedPresentationWithZoom = () => {
         }
 
         .download-btn {
-          background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+          background: linear-gradient(135deg, #002677 0%, #003d99 100%);
           color: white;
           border: none;
           border-radius: 12px;
@@ -2395,23 +2550,23 @@ const GuidedPresentationWithZoom = () => {
           align-items: center;
           gap: 12px;
           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3);
+          box-shadow: 0 4px 12px rgba(0, 38, 119, 0.3);
           letter-spacing: -0.01em;
         }
 
         .download-btn:hover {
-          background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+          background: linear-gradient(135deg, #003d99 0%, #0044aa 100%);
           transform: translateY(-2px);
-          box-shadow: 0 8px 20px rgba(30, 58, 138, 0.4);
+          box-shadow: 0 8px 20px rgba(0, 38, 119, 0.4);
         }
 
         .download-btn:active {
           transform: translateY(0);
-          box-shadow: 0 2px 8px rgba(30, 58, 138, 0.3);
+          box-shadow: 0 2px 8px rgba(0, 38, 119, 0.3);
         }
 
         .download-btn:focus {
-          outline: 3px solid rgba(30, 58, 138, 0.3);
+          outline: 3px solid rgba(0, 38, 119, 0.3);
           outline-offset: 2px;
         }
 
