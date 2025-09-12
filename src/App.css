@@ -206,28 +206,6 @@ body {
   margin-top: 1.5rem;
 }
 
-.reset-button {
-  background: #dc2626;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 0.75rem 1.25rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.reset-button:hover {
-  background: #b91c1c;
-}
-
-.reset-button:active {
-  background: #991b1b;
-}
 
 /* Modern Footer 2025 */
 .modern-footer {
@@ -884,9 +862,6 @@ body {
   margin: 2rem 0;
   text-align: center;
   padding: 1.5rem;
-  background: #f0fff4;
-  border: 1px solid #9ae6b4;
-  border-radius: 8px;
 }
 
 .conversion-container .download-button {

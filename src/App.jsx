@@ -82,7 +82,7 @@ function App() {
               </svg>
             </div>
             <div className="brand-text">
-              <h1>DocuFlow</h1>
+              <h1>EOBify</h1>
               <span className="brand-subtitle">Smart Document Processing</span>
             </div>
           </div>

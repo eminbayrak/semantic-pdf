@@ -1853,12 +1853,9 @@ const GuidedPresentationWithZoom = () => {
                 }}
                 title="Remove file and start over"
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M3 6h18"></path>
-                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-                  <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
-                  <line x1="10" y1="11" x2="10" y2="17"></line>
-                  <line x1="14" y1="11" x2="14" y2="17"></line>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
                 </svg>
               </button>
             </div>
@@ -2008,14 +2005,14 @@ const GuidedPresentationWithZoom = () => {
                   URL.revokeObjectURL(url);
                 }}
                 className="download-btn"
-                aria-label="Download HTML presentation with zoom controls"
+                aria-label="Download presentation"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                   <polyline points="7,10 12,15 17,10"></polyline>
                   <line x1="12" y1="15" x2="12" y2="3"></line>
                 </svg>
-                Download HTML with Zoom
+                Download
               </button>
             </div>
           )}
@@ -2114,24 +2111,27 @@ const GuidedPresentationWithZoom = () => {
         }
 
         .upload-zone h2 {
-          font-size: 18px;
-          font-weight: 600;
+          font-size: 22px;
+          font-weight: 700;
           color: #1e293b;
-          margin: 0 0 6px 0;
+          margin: 0 0 8px 0;
+          letter-spacing: -0.025em;
         }
 
         .upload-zone p {
-          font-size: 14px;
+          font-size: 16px;
           color: #64748b;
-          margin: 0 0 12px 0;
+          margin: 0 0 16px 0;
+          font-weight: 400;
         }
 
         .file-requirements {
           display: flex;
-          gap: 16px;
+          gap: 20px;
           justify-content: center;
-          font-size: 12px;
+          font-size: 14px;
           color: #94a3b8;
+          font-weight: 500;
         }
 
         /* File Thumbnail */
@@ -2166,38 +2166,51 @@ const GuidedPresentationWithZoom = () => {
         }
 
         .file-name {
-          font-size: 14px;
-          font-weight: 600;
+          font-size: 16px;
+          font-weight: 700;
           color: #1e293b;
-          margin-bottom: 4px;
+          margin-bottom: 6px;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
+          letter-spacing: -0.01em;
         }
 
         .file-size {
-          font-size: 12px;
+          font-size: 14px;
           color: #64748b;
+          font-weight: 500;
         }
 
         .reset-button {
-          background: #ef4444;
-          color: white;
-          border: none;
+          background: transparent !important;
+          color: #ef4444 !important;
+          border: none !important;
           border-radius: 6px;
-          width: 32px;
-          height: 32px;
-          display: flex;
+          width: 40px !important;
+          height: 40px !important;
+          display: flex !important;
           align-items: center;
           justify-content: center;
           cursor: pointer;
           transition: all 0.2s ease;
           flex-shrink: 0;
+          padding: 0 !important;
+          font-size: 0 !important;
+          font-weight: normal !important;
+          gap: 0 !important;
+        }
+
+        .reset-button svg {
+          width: 20px !important;
+          height: 20px !important;
+          display: block !important;
+          stroke: currentColor !important;
         }
 
         .reset-button:hover {
-          background: #dc2626;
-          transform: scale(1.05);
+          background: #fef2f2;
+          color: #dc2626;
         }
 
         .reset-button:active {
@@ -2214,11 +2227,12 @@ const GuidedPresentationWithZoom = () => {
         }
 
         .process-workflow h3 {
-          font-size: 16px;
-          font-weight: 600;
+          font-size: 24px;
+          font-weight: 700;
           color: #1e293b;
-          margin: 0 0 16px 0;
+          margin: 0 0 32px 0;
           text-align: center;
+          letter-spacing: -0.025em;
         }
 
         .workflow-steps {
@@ -2226,7 +2240,8 @@ const GuidedPresentationWithZoom = () => {
           justify-content: space-between;
           align-items: flex-start;
           position: relative;
-          margin-bottom: 16px;
+          margin-bottom: 24px;
+          padding: 0 20px;
         }
 
         .workflow-step {
@@ -2236,6 +2251,11 @@ const GuidedPresentationWithZoom = () => {
           flex: 1;
           position: relative;
           z-index: 2;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .workflow-step:hover {
+          transform: translateY(-2px);
         }
 
         .step-icon {
@@ -2319,10 +2339,11 @@ const GuidedPresentationWithZoom = () => {
         }
 
         .step-title {
-          font-size: 14px;
-          font-weight: 600;
+          font-size: 16px;
+          font-weight: 700;
           color: #1e293b;
-          margin-bottom: 4px;
+          margin-bottom: 8px;
+          letter-spacing: -0.01em;
         }
 
         .workflow-step.active .step-title {
@@ -2334,9 +2355,10 @@ const GuidedPresentationWithZoom = () => {
         }
 
         .step-description {
-          font-size: 12px;
+          font-size: 14px;
           color: #64748b;
-          line-height: 1.4;
+          line-height: 1.5;
+          font-weight: 400;
         }
 
         .step-connector {
@@ -2350,7 +2372,7 @@ const GuidedPresentationWithZoom = () => {
           border-radius: 2px;
         }
 
-        .workflow-step.completed + .workflow-step .step-connector {
+        .workflow-step.completed .step-connector {
           background: #22c55e;
         }
 
@@ -2358,30 +2380,38 @@ const GuidedPresentationWithZoom = () => {
         .download-section {
           text-align: center;
           padding-top: 16px;
-          border-top: 1px solid #e2e8f0;
         }
 
         .download-btn {
-          background: #1e3a8a;
+          background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
           color: white;
           border: none;
-          border-radius: 6px;
-          padding: 12px 24px;
-          font-size: 16px;
-          font-weight: 600;
+          border-radius: 12px;
+          padding: 16px 32px;
+          font-size: 18px;
+          font-weight: 700;
           cursor: pointer;
           display: inline-flex;
           align-items: center;
-          gap: 8px;
-          transition: all 0.2s ease;
+          gap: 12px;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3);
+          letter-spacing: -0.01em;
         }
 
         .download-btn:hover {
-          background: #1e40af;
+          background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+          transform: translateY(-2px);
+          box-shadow: 0 8px 20px rgba(30, 58, 138, 0.4);
+        }
+
+        .download-btn:active {
+          transform: translateY(0);
+          box-shadow: 0 2px 8px rgba(30, 58, 138, 0.3);
         }
 
         .download-btn:focus {
-          outline: 2px solid #1e3a8a;
+          outline: 3px solid rgba(30, 58, 138, 0.3);
           outline-offset: 2px;
         }
 
@@ -2552,8 +2582,8 @@ const GuidedPresentationWithZoom = () => {
           }
 
           .reset-button {
-            width: 28px;
-            height: 28px;
+            width: 36px;
+            height: 36px;
           }
 
           .process-workflow {
@@ -2580,17 +2610,17 @@ const GuidedPresentationWithZoom = () => {
           }
 
           .step-title {
-            font-size: 13px;
+            font-size: 15px;
           }
 
           .step-description {
-            font-size: 11px;
+            font-size: 13px;
           }
 
           .file-requirements {
             flex-direction: column;
-            gap: 6px;
-            font-size: 12px;
+            gap: 8px;
+            font-size: 13px;
           }
 
           .footer-container {
