@@ -425,6 +425,19 @@ const GuidedPresentationWithZoom = () => {
     const canvasWidth = viewport.width;
     const canvasHeight = viewport.height;
     
+    // Extract EOB summary data
+    const eobSummary = narrativeData?.eobSummary || {
+      serviceDate: "Date not available",
+      providerName: "Provider not identified",
+      services: [{ description: "Service details not available", amount: "$0.00" }],
+      totalCharged: "$0.00",
+      insurancePaid: "$0.00",
+      adjustments: "$0.00",
+      patientOwes: "$0.00",
+      deductible: "$0.00",
+      copay: "$0.00"
+    };
+    
     // Prepare audio data for embedding
     const audioDataForHTML = audioData && audioData.audioSteps ? audioData.audioSteps.map(step => {
       if (step.success && step.audioData) {
@@ -477,44 +490,50 @@ const GuidedPresentationWithZoom = () => {
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; 
-            background: #f8fafc; 
-            color: #333; 
+            background: #f1f5f9; 
+            color: #1e293b; 
             overflow: hidden;
             height: 100vh;
             margin: 0;
             padding: 0;
+            line-height: 1.6;
         }
         
         .container { 
             display: flex; 
             height: 100vh; 
-            background: #f8fafc;
+            background: #f1f5f9;
             margin: 0;
             overflow: hidden;
+            gap: 0;
         }
         
         /* PDF View Section - Main Content */
          .pdf-viewer { 
              flex: 1; 
-             background: #000; 
+             background: #ffffff; 
              position: relative; 
              display: flex; 
              align-items: center; 
              justify-content: center; 
              overflow: hidden;
-             cursor: default; /* Changed from grab since panning is disabled */
-             margin: 0;
-             border-right: 1px solid #e0e0e0;
+             cursor: default;
+             margin: 16px;
+             border-radius: 12px;
+             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+             border: 1px solid #e2e8f0;
          }
-        
+         
          .pdf-container { 
              position: relative; 
              transform-origin: center center;
-             transition: none; /* Remove transitions to keep PDF stable */
+             transition: none;
              max-width: calc(100% - 20px);
              max-height: calc(100% - 20px);
-             /* Keep PDF centered and stable */
              margin: 0 auto;
+             background: #ffffff;
+             border-radius: 8px;
+             overflow: visible;
          }
         
         .pdf-background { 
@@ -526,6 +545,7 @@ const GuidedPresentationWithZoom = () => {
             max-width: 100%;
             max-height: 100%;
             object-fit: contain;
+            border-radius: 6px;
         }
         
         .highlight-overlay { 
@@ -597,49 +617,50 @@ const GuidedPresentationWithZoom = () => {
         /* Zoom Controls */
         .zoom-controls {
             position: absolute;
-            top: 20px;
-            right: 20px;
+            top: 24px;
+            right: 24px;
             z-index: 10;
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            background: rgba(255, 255, 255, 0.95);
-            padding: 12px;
-            border-radius: 16px;
-            backdrop-filter: blur(20px);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
+            gap: 6px;
+            background: #ffffff;
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
         }
         
         .zoom-btn {
-            width: 36px;
-            height: 36px;
+            width: 40px;
+            height: 40px;
             border: none;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 8px;
+            background: #3b82f6;
             color: white;
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.2s ease;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
         }
         
         .zoom-btn:hover {
-            transform: scale(1.1);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+            background: #2563eb;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
         
         .zoom-btn:active {
-            transform: scale(0.95);
+            transform: translateY(0);
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
         }
         
         .zoom-btn:disabled {
-            background: #e9ecef;
-            color: #6c757d;
+            background: #e2e8f0;
+            color: #94a3b8;
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
@@ -647,30 +668,142 @@ const GuidedPresentationWithZoom = () => {
         
         .zoom-level {
             text-align: center;
-            color: #667eea;
-            font-weight: 600;
-            font-size: 12px;
-            margin-top: 4px;
+            color: #64748b;
+            font-weight: 500;
+            font-size: 11px;
+            margin-top: 6px;
+            letter-spacing: 0.025em;
         }
         
         .zoom-to-fit-btn {
             width: 100%;
-            padding: 6px 8px;
-            background: linear-gradient(135deg, #28a745, #20c997);
+            padding: 8px 12px;
+            background: #10b981;
             color: white;
             border: none;
-            border-radius: 8px;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 10px;
-            font-weight: 600;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 11px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            margin-top: 4px;
         }
         
         .zoom-to-fit-btn:hover {
+            background: #059669;
             transform: translateY(-1px);
-            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+            box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1);
         }
         
+        /* EOB Summary Sticky Note */
+        .eob-summary-sticky {
+            position: fixed;
+            top: 24px;
+            left: 24px;
+            width: 300px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            z-index: 1000;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            transform: rotate(0deg);
+            transition: all 0.2s ease;
+        }
+        
+        .eob-summary-sticky:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        .eob-summary-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 12px;
+        }
+        
+        .eob-summary-icon {
+            font-size: 18px;
+            margin-right: 10px;
+            color: #3b82f6;
+        }
+        
+        .eob-summary-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1e293b;
+            margin: 0;
+            letter-spacing: -0.025em;
+        }
+        
+        .eob-summary-content {
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .eob-summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            padding: 6px 0;
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
+        }
+        
+        .eob-summary-row:hover {
+            background-color: #f8fafc;
+        }
+        
+        .eob-summary-label {
+            color: #64748b;
+            font-weight: 500;
+            font-size: 13px;
+        }
+        
+        .eob-summary-value {
+            color: #1e293b;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .eob-summary-value.highlight {
+            color: #dc2626;
+            font-weight: 700;
+            font-size: 16px;
+        }
+        
+        .eob-summary-services {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #e2e8f0;
+            background-color: #f8fafc;
+            border-radius: 6px;
+            padding: 12px;
+        }
+        
+        .eob-summary-service {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+            font-size: 13px;
+            padding: 4px 0;
+        }
+        
+        .eob-summary-service-label {
+            color: #64748b;
+            font-weight: 500;
+        }
+        
+        .eob-summary-service-value {
+            color: #1e293b;
+            font-weight: 600;
+        }
+
         /* Right Side Panel - Slide Navigation */
         .slide-navigation {
             width: 320px;
@@ -835,31 +968,31 @@ const GuidedPresentationWithZoom = () => {
         }
         
         .nav-arrow {
-            width: 40px;
-            height: 40px;
+            width: 44px;
+            height: 44px;
             border: none;
-            border-radius: 50%;
-            background: #1976d2;
+            border-radius: 10px;
+            background: #3b82f6;
             color: white;
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+            box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.06);
         }
         
         .nav-arrow:hover {
-            background: #1565c0;
-            transform: scale(1.1);
-            box-shadow: 0 6px 16px rgba(25, 118, 210, 0.4);
+            background: #2563eb;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
         
         .nav-arrow:disabled {
-            background: #e0e0e0;
-            color: #9e9e9e;
+            background: #e2e8f0;
+            color: #94a3b8;
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
@@ -870,9 +1003,9 @@ const GuidedPresentationWithZoom = () => {
         }
         
         .progress-label {
-            font-size: 12px;
-            color: #666;
-            margin-bottom: 8px;
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 10px;
             font-weight: 500;
         }
         
@@ -882,10 +1015,11 @@ const GuidedPresentationWithZoom = () => {
             bottom: 0;
             left: 0;
             right: 0;
-            background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
-            padding: 20px;
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+            padding: 24px;
             z-index: 10;
             pointer-events: none;
+            border-radius: 0 0 12px 12px;
         }
         
         .video-controls {
@@ -896,28 +1030,29 @@ const GuidedPresentationWithZoom = () => {
         }
         
         .play-pause-btn {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
+            width: 52px;
+            height: 52px;
+            border-radius: 12px;
             border: none;
-            background: rgba(255, 255, 255, 0.9);
-            color: #000;
-            font-size: 18px;
+            background: rgba(255, 255, 255, 0.95);
+            color: #1e293b;
+            font-size: 20px;
             cursor: pointer;
             transition: all 0.2s ease;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
         
         .play-pause-btn:hover {
-            background: #fff;
+            background: #ffffff;
             transform: scale(1.05);
+            box-shadow: 0 6px 8px -1px rgba(0, 0, 0, 0.1), 0 4px 6px -1px rgba(0, 0, 0, 0.06);
         }
         
         .play-pause-btn.playing {
-            background: #ff0000;
+            background: #dc2626;
             color: white;
         }
         
@@ -926,9 +1061,9 @@ const GuidedPresentationWithZoom = () => {
             color: white;
             font-size: 16px;
             font-weight: 500;
-            line-height: 1.4;
-            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
-            max-width: 60%;
+            line-height: 1.5;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+            max-width: 70%;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -940,15 +1075,17 @@ const GuidedPresentationWithZoom = () => {
             left: 0;
             right: 0;
             height: 4px;
-            background: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.2);
             z-index: 11;
+            border-radius: 0 0 12px 12px;
         }
         
         .video-progress-fill {
             height: 100%;
-            background: #ff0000;
+            background: #dc2626;
             width: 0%;
             transition: width 0.1s ease;
+            border-radius: 0 0 12px 12px;
         }
         
         /* Audio Controls - Hidden */
@@ -958,18 +1095,18 @@ const GuidedPresentationWithZoom = () => {
         
         /* Progress Bar */
         .progress-container { 
-            background: #e9ecef; 
-            height: 6px; 
-            border-radius: 3px; 
+            background: #e2e8f0; 
+            height: 8px; 
+            border-radius: 4px; 
             margin-bottom: 20px; 
             overflow: hidden; 
         }
         
         .progress-fill { 
             height: 100%; 
-            background: linear-gradient(135deg, #667eea, #764ba2); 
+            background: #3b82f6; 
             width: 0%; 
-            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            transition: width 0.3s ease; 
         }
         
         /* Responsive design */
@@ -980,14 +1117,14 @@ const GuidedPresentationWithZoom = () => {
             
             .pdf-viewer {
                 height: 60vh;
-                margin: 0;
+                margin: 8px;
                 border-right: none;
-                border-bottom: 1px solid #e0e0e0;
+                border-bottom: 1px solid #e2e8f0;
             }
             
             .pdf-container {
-                max-width: calc(100vw - 20px);
-                max-height: calc(60vh - 20px);
+                max-width: calc(100vw - 32px);
+                max-height: calc(60vh - 32px);
             }
             
             .slide-navigation {
@@ -1006,15 +1143,15 @@ const GuidedPresentationWithZoom = () => {
             }
             
             .zoom-controls {
-                top: 10px;
-                right: 10px;
-                padding: 8px;
+                top: 12px;
+                right: 12px;
+                padding: 12px;
             }
             
             .zoom-btn {
-                width: 32px;
-                height: 32px;
-                font-size: 14px;
+                width: 36px;
+                height: 36px;
+                font-size: 16px;
             }
             
             .bottom-play-button {
@@ -1031,9 +1168,9 @@ const GuidedPresentationWithZoom = () => {
             }
             
             .nav-arrow {
-                width: 36px;
-                height: 36px;
-                font-size: 14px;
+                width: 40px;
+                height: 40px;
+                font-size: 16px;
             }
             
             .slide-item {
@@ -1045,11 +1182,101 @@ const GuidedPresentationWithZoom = () => {
                 height: 28px;
                 font-size: 12px;
             }
+            
+            /* EOB Summary Sticky Note - Mobile */
+            .eob-summary-sticky {
+                position: fixed;
+                top: 12px;
+                left: 12px;
+                right: 12px;
+                width: auto;
+                transform: rotate(0deg);
+                z-index: 1001;
+                max-height: 220px;
+                overflow-y: auto;
+                padding: 16px;
+            }
+            
+            .eob-summary-sticky:hover {
+                transform: translateY(-1px);
+            }
+            
+            .eob-summary-content {
+                font-size: 13px;
+            }
+            
+            .eob-summary-row {
+                margin-bottom: 6px;
+            }
+            
+            .eob-summary-services {
+                margin-top: 8px;
+                padding-top: 8px;
+            }
+            
+            .eob-summary-service {
+                font-size: 12px;
+                margin-bottom: 4px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- EOB Summary Sticky Note -->
+        <div class="eob-summary-sticky">
+            <div class="eob-summary-header">
+                <div class="eob-summary-icon">📋</div>
+                <h3 class="eob-summary-title">EOB Summary</h3>
+            </div>
+            <div class="eob-summary-content">
+                <div class="eob-summary-row">
+                    <span class="eob-summary-label">Date:</span>
+                    <span class="eob-summary-value">${eobSummary.serviceDate}</span>
+                </div>
+                <div class="eob-summary-row">
+                    <span class="eob-summary-label">Provider:</span>
+                    <span class="eob-summary-value">${eobSummary.providerName}</span>
+                </div>
+                <div class="eob-summary-services">
+                    ${eobSummary.services.map(service => `
+                        <div class="eob-summary-service">
+                            <span class="eob-summary-service-label">${service.description}</span>
+                            <span class="eob-summary-service-value">${service.amount}</span>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="eob-summary-row">
+                    <span class="eob-summary-label">Total Charged:</span>
+                    <span class="eob-summary-value">${eobSummary.totalCharged}</span>
+                </div>
+                <div class="eob-summary-row">
+                    <span class="eob-summary-label">Insurance Paid:</span>
+                    <span class="eob-summary-value">${eobSummary.insurancePaid}</span>
+                </div>
+                <div class="eob-summary-row">
+                    <span class="eob-summary-label">Adjustments:</span>
+                    <span class="eob-summary-value">${eobSummary.adjustments}</span>
+                </div>
+                <div class="eob-summary-row" style="border-top: 1px solid #fdcb6e; padding-top: 6px; margin-top: 6px;">
+                    <span class="eob-summary-label" style="font-weight: 700; color: #2d3436;">You Owe:</span>
+                    <span class="eob-summary-value highlight">${eobSummary.patientOwes}</span>
+                </div>
+                ${eobSummary.deductible !== "$0.00" ? `
+                <div class="eob-summary-row">
+                    <span class="eob-summary-label">Deductible:</span>
+                    <span class="eob-summary-value">${eobSummary.deductible}</span>
+                </div>
+                ` : ''}
+                ${eobSummary.copay !== "$0.00" ? `
+                <div class="eob-summary-row">
+                    <span class="eob-summary-label">Copay:</span>
+                    <span class="eob-summary-value">${eobSummary.copay}</span>
+                </div>
+                ` : ''}
+            </div>
+        </div>
+
         <!-- PDF View Section - Main Content -->
         <div class="pdf-viewer" id="pdfViewer">
             <!-- Zoom Controls -->

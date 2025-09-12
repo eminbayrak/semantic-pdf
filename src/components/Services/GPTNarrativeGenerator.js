@@ -55,7 +55,8 @@ class GPTNarrativeGenerator {
 
             Your task:
             1. Read the EOB carefully and create a narration script that explains only the most important information, step by step
-            2. Avoid filler words and focus on these key points:
+            2. Extract key financial information for a sticky summary note
+            3. Avoid filler words and focus on these key points:
                - What medical services or procedures this EOB is about
                - The total amount the provider charged
                - How much the insurance company covered
@@ -64,17 +65,19 @@ class GPTNarrativeGenerator {
                - Any notes about deductibles, copays, or coinsurance, explained in very basic terms
                - Any follow-up actions the patient should know about
             
-            3. Write the script in a warm, clear tone
-            4. Avoid insurance jargon - instead of 'allowed amount,' say 'the amount your insurance company agreed to pay'
-            5. Instead of 'patient responsibility,' say 'this is what you will need to pay'
-            6. Break long sentences into short ones
-            7. Think of it like teaching a friend step by step
+            4. Write the script in a warm, clear tone
+            5. Avoid insurance jargon - instead of 'allowed amount,' say 'the amount your insurance company agreed to pay'
+            6. Instead of 'patient responsibility,' say 'this is what you will need to pay'
+            7. Break long sentences into short ones
+            8. Think of it like teaching a friend step by step
             
             For each step, provide:
             - A clear title
             - Simple narrative text
             - Exact text to highlight from the document
-            - The semantic block ID that matches the highlighted text`
+            - The semantic block ID that matches the highlighted text
+            
+            IMPORTANT: Also extract financial summary data for a sticky note display`
           },
           {
             role: "user",
@@ -127,6 +130,22 @@ Please provide a JSON response with the following structure:
 {
   "title": "Understanding Your Explanation of Benefits",
   "introduction": "Brief, warm introduction explaining what an EOB is",
+  "eobSummary": {
+    "serviceDate": "Date of service (e.g., 'March 15, 2024')",
+    "providerName": "Doctor or facility name",
+    "services": [
+      {
+        "description": "Service description (e.g., 'Office Visit', 'Lab Test')",
+        "amount": "Charged amount (e.g., '$150.00')"
+      }
+    ],
+    "totalCharged": "Total amount provider charged (e.g., '$150.00')",
+    "insurancePaid": "Amount insurance covered (e.g., '$120.00')",
+    "adjustments": "Any discounts or adjustments (e.g., '$0.00')",
+    "patientOwes": "Amount patient needs to pay (e.g., '$30.00')",
+    "deductible": "Deductible amount if applicable (e.g., '$0.00')",
+    "copay": "Copay amount if applicable (e.g., '$30.00')"
+  },
   "steps": [
     {
       "stepNumber": 1,
@@ -158,7 +177,16 @@ Requirements:
 5. Each step should be 5-7 seconds of speech
 6. Focus especially on financial amounts and what the patient owes
 7. Explain everything like you're talking to a friend who's never seen an EOB before
-7. Use the semantic block IDs provided above for targeting
+8. Use the semantic block IDs provided above for targeting
+9. IMPORTANT: Extract all financial data for the eobSummary section - look for:
+   - Service dates and provider names
+   - Individual service descriptions and amounts
+   - Total charged amount
+   - Insurance payment amount
+   - Any adjustments or discounts
+   - Patient responsibility amount
+   - Deductible and copay amounts
+   - Format all amounts with dollar signs and proper formatting
 
 Please respond with valid JSON only.`;
   }
@@ -198,7 +226,8 @@ Please respond with valid JSON only.`;
       return {
         ...narrativeData,
         steps: enhancedSteps,
-        totalDuration: enhancedSteps.reduce((total, step) => total + (step.duration || 5), 0)
+        totalDuration: enhancedSteps.reduce((total, step) => total + (step.duration || 5), 0),
+        eobSummary: narrativeData.eobSummary || this.createDefaultEOBSummary()
       };
 
     } catch (error) {
@@ -271,7 +300,30 @@ Please respond with valid JSON only.`;
         matched: true
       })),
       conclusion: "That completes our walkthrough of this document.",
-      totalDuration: importantBlocks.length * 5
+      totalDuration: importantBlocks.length * 5,
+      eobSummary: this.createDefaultEOBSummary()
+    };
+  }
+
+  /**
+   * Create default EOB summary when data extraction fails
+   */
+  createDefaultEOBSummary() {
+    return {
+      serviceDate: "Date not available",
+      providerName: "Provider not identified",
+      services: [
+        {
+          description: "Service details not available",
+          amount: "$0.00"
+        }
+      ],
+      totalCharged: "$0.00",
+      insurancePaid: "$0.00",
+      adjustments: "$0.00",
+      patientOwes: "$0.00",
+      deductible: "$0.00",
+      copay: "$0.00"
     };
   }
 
