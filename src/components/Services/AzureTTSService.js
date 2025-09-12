@@ -16,6 +16,8 @@ class AzureTTSService {
     this.audioContext = null;
     this.currentAudio = null;
     this.isPlaying = false;
+    this.availableVoices = this.getAvailableVoices();
+    this.currentNarrativeVoice = null; // Store voice for entire narrative
   }
 
   /**
@@ -38,20 +40,32 @@ class AzureTTSService {
    * @param {Object} step - Narrative step object
    * @param {string} step.narrative - Text to convert to speech
    * @param {number} step.duration - Expected duration in seconds
+   * @param {Object} options - TTS options including voice randomization
    * @returns {Promise<Object>} Audio generation result
    */
-  async generateStepAudio(step) {
+  async generateStepAudio(step, options = {}) {
     try {
       console.log(`🎵 Generating audio for step ${step.stepNumber}: "${step.narrative}"`);
       
-      const audioData = await this.synthesizeSpeech(step.narrative);
+      // Determine voice for this step
+      let voiceToUse = this.currentNarrativeVoice;
+      if (options.randomizePerStep) {
+        voiceToUse = this.getRandomVoice();
+        console.log(`🎭 Step ${step.stepNumber} using voice: ${voiceToUse.displayName}`);
+      }
+      
+      const audioData = await this.synthesizeSpeech(step.narrative, {
+        ...options,
+        voice: voiceToUse.name
+      });
       
       return {
         success: true,
         stepNumber: step.stepNumber,
         audioData: audioData,
         duration: step.duration,
-        text: step.narrative
+        text: step.narrative,
+        voice: voiceToUse
       };
 
     } catch (error) {
@@ -68,9 +82,10 @@ class AzureTTSService {
   /**
    * Generate audio for entire narrative script
    * @param {Object} narrativeScript - Complete narrative script
+   * @param {Object} options - TTS options including voice randomization
    * @returns {Promise<Object>} Complete audio generation result
    */
-  async generateNarrativeAudio(narrativeScript) {
+  async generateNarrativeAudio(narrativeScript, options = {}) {
     try {
       console.log('🎵 Generating complete narrative audio...');
       
@@ -78,12 +93,18 @@ class AzureTTSService {
         throw new Error('Invalid narrative script provided');
       }
 
+      // Set voice for entire narrative if not already set
+      if (!this.currentNarrativeVoice || options.randomizeVoice) {
+        this.currentNarrativeVoice = this.getRandomVoice();
+        console.log(`🎭 Selected voice: ${this.currentNarrativeVoice.displayName}`);
+      }
+
       const audioSteps = [];
       let totalDuration = 0;
 
       // Generate audio for each step
       for (const step of narrativeScript.steps) {
-        const audioResult = await this.generateStepAudio(step);
+        const audioResult = await this.generateStepAudio(step, options);
         audioSteps.push(audioResult);
         
         if (audioResult.success) {
@@ -275,6 +296,38 @@ class AzureTTSService {
       { name: 'en-US-BrandonNeural', displayName: 'Brandon (Male, US)' },
       { name: 'en-US-ChristopherNeural', displayName: 'Christopher (Male, US)' }
     ];
+  }
+
+  /**
+   * Get a random voice from available voices
+   * @returns {Object} Random voice object
+   */
+  getRandomVoice() {
+    const randomIndex = Math.floor(Math.random() * this.availableVoices.length);
+    return this.availableVoices[randomIndex];
+  }
+
+  /**
+   * Reset the current narrative voice (useful for new presentations)
+   */
+  resetNarrativeVoice() {
+    this.currentNarrativeVoice = null;
+    console.log('🎭 Narrative voice reset - next generation will use random voice');
+  }
+
+  /**
+   * Set a specific voice for the current narrative
+   * @param {string} voiceName - Voice name to use
+   */
+  setNarrativeVoice(voiceName) {
+    const voice = this.availableVoices.find(v => v.name === voiceName);
+    if (voice) {
+      this.currentNarrativeVoice = voice;
+      console.log(`🎭 Set narrative voice to: ${voice.displayName}`);
+    } else {
+      console.warn(`Voice '${voiceName}' not found. Using random voice instead.`);
+      this.currentNarrativeVoice = this.getRandomVoice();
+    }
   }
 
   /**
