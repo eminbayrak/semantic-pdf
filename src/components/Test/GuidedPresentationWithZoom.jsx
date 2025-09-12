@@ -68,18 +68,31 @@ const GuidedPresentationWithZoom = () => {
   const loadPage = async (pdf, pageNumber, file) => {
     try {
       const page = await pdf.getPage(pageNumber);
-      const viewport = page.getViewport({ scale });
       
-      // Set canvas dimensions
+      // Use high resolution for crisp rendering
+      const scaleFactor = 2.0; // 2x resolution for high DPI displays
+      const baseViewport = page.getViewport({ scale: scale });
+      const highResViewport = page.getViewport({ scale: scale * scaleFactor });
+      
+      // Set canvas dimensions with high resolution
       const canvas = canvasRef.current;
       const context = canvas.getContext('2d');
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
       
-      // Render PDF page to canvas
+      // Set actual canvas size (high resolution)
+      canvas.width = highResViewport.width;
+      canvas.height = highResViewport.height;
+      
+      // Set display size (CSS pixels) - this is what we'll use for coordinates
+      canvas.style.width = baseViewport.width + 'px';
+      canvas.style.height = baseViewport.height + 'px';
+      
+      // Scale the drawing context to match the device pixel ratio
+      context.scale(scaleFactor, scaleFactor);
+      
+      // Render PDF page to canvas with high resolution
       const renderContext = {
         canvasContext: context,
-        viewport: viewport
+        viewport: baseViewport
       };
       
       await page.render(renderContext).promise;
@@ -110,7 +123,7 @@ const GuidedPresentationWithZoom = () => {
       }
       
       // Generate presentation HTML with zoom functionality
-      const html = generatePresentationHTMLWithZoom(alignedHighlights, viewport, pageNumber, canvas, generatedNarrative, generatedAudio);
+      const html = generatePresentationHTMLWithZoom(alignedHighlights, baseViewport, pageNumber, canvas, generatedNarrative, generatedAudio);
       setPresentationHTML(html);
       
     } catch (err) {
@@ -408,8 +421,9 @@ const GuidedPresentationWithZoom = () => {
   // Generate presentation HTML with zoom functionality
   const generatePresentationHTMLWithZoom = (alignedHighlights, viewport, pageNumber, canvas, narrativeData, audioData) => {
     const imageDataUrl = canvas.toDataURL('image/png');
-    const canvasWidth = canvas.width;
-    const canvasHeight = canvas.height;
+    // Use the display size (CSS pixels) for coordinates, not the high-res canvas size
+    const canvasWidth = viewport.width;
+    const canvasHeight = viewport.height;
     
     // Prepare audio data for embedding
     const audioDataForHTML = audioData && audioData.audioSteps ? audioData.audioSteps.map(step => {
@@ -463,43 +477,45 @@ const GuidedPresentationWithZoom = () => {
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            background: #f8fafc; 
             color: #333; 
             overflow: hidden;
             height: 100vh;
+            margin: 0;
+            padding: 0;
         }
         
         .container { 
             display: flex; 
             height: 100vh; 
-            background: linear-gradient(135deg, #f8f9fa 0%, #e3f2fd 100%);
+            background: #f8fafc;
             margin: 0;
             overflow: hidden;
         }
         
         /* PDF View Section - Main Content */
-        .pdf-viewer { 
-            flex: 1; 
-            background: #fff; 
-            position: relative; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            overflow: hidden;
-            cursor: grab;
-            border-radius: 20px 0 0 20px;
-            margin: 20px 0 20px 20px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-        }
-        .pdf-viewer.dragging { cursor: grabbing; }
+         .pdf-viewer { 
+             flex: 1; 
+             background: #000; 
+             position: relative; 
+             display: flex; 
+             align-items: center; 
+             justify-content: center; 
+             overflow: hidden;
+             cursor: default; /* Changed from grab since panning is disabled */
+             margin: 0;
+             border-right: 1px solid #e0e0e0;
+         }
         
-        .pdf-container { 
-            position: relative; 
-            transform-origin: center center;
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        }
+         .pdf-container { 
+             position: relative; 
+             transform-origin: center center;
+             transition: none; /* Remove transitions to keep PDF stable */
+             max-width: calc(100% - 20px);
+             max-height: calc(100% - 20px);
+             /* Keep PDF centered and stable */
+             margin: 0 auto;
+         }
         
         .pdf-background { 
             width: ${canvasWidth}px; 
@@ -507,7 +523,9 @@ const GuidedPresentationWithZoom = () => {
             z-index: 1; 
             user-select: none;
             pointer-events: none;
-            border-radius: 12px;
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
         }
         
         .highlight-overlay { 
@@ -520,23 +538,23 @@ const GuidedPresentationWithZoom = () => {
             pointer-events: none; 
         }
         
-        .highlight-element { 
-            position: absolute; 
-            border: 3px solid #ffd700; 
-            border-radius: 8px; 
-            background: rgba(255, 215, 0, 0.2); 
-            opacity: 0; 
-            transform: scale(0.9); 
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
-            pointer-events: none; 
-            min-width: 100px; 
-            min-height: 50px; 
-            box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
-        }
+         .highlight-element { 
+             position: absolute; 
+             border: none; 
+             border-radius: 0; 
+             background: transparent; 
+             opacity: 0; 
+             transform: scale(0.9); 
+             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
+             pointer-events: none; 
+             min-width: 0; 
+             min-height: 0; 
+             box-shadow: none;
+         }
         
         .highlight-element.needs-review { 
-            border-color: #ff6b6b; 
-            background: rgba(255, 107, 107, 0.1); 
+            border: none; 
+            background: transparent; 
         }
         
         .highlight-label { 
@@ -558,6 +576,7 @@ const GuidedPresentationWithZoom = () => {
             justify-content: center; 
             border: 3px solid #fff; 
             line-height: 1; 
+            opacity: 1; /* Always visible when parent is active */
         }
         
         .highlight-element.needs-review .highlight-label { 
@@ -567,7 +586,7 @@ const GuidedPresentationWithZoom = () => {
         .highlight-element.active { 
             opacity: 1; 
             transform: scale(1); 
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+            box-shadow: none;
         }
         
         .highlight-element.prev { 
@@ -653,17 +672,27 @@ const GuidedPresentationWithZoom = () => {
         }
         
         /* Right Side Panel - Slide Navigation */
-        .slide-navigation { 
-            width: 280px;
-            background: #fff; 
-            padding: 0; 
+        .slide-navigation {
+            width: 320px;
+            background: #fff;
+            padding: 0;
             border-left: 1px solid #e0e0e0;
             display: flex;
             flex-direction: column;
             overflow-y: auto;
-            border-radius: 0 20px 20px 0;
-            margin: 20px 20px 20px 0;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            flex-shrink: 0;
+            position: relative;
+        }
+        
+        /* YouTube-style separator line */
+        .slide-navigation::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background: linear-gradient(to bottom, transparent, #e0e0e0, transparent);
         }
         
         .slide-navigation-header {
@@ -847,64 +876,79 @@ const GuidedPresentationWithZoom = () => {
             font-weight: 500;
         }
         
-        /* Bottom Play/Pause Button */
-        .bottom-play-button {
+        /* YouTube-style Video Player Controls */
+        .video-player-overlay {
             position: absolute;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 70px;
-            height: 70px;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+            padding: 20px;
+            z-index: 10;
+            pointer-events: none;
+        }
+        
+        .video-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            pointer-events: auto;
+        }
+        
+        .play-pause-btn {
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
             border: none;
-            background: linear-gradient(135deg, #1976d2, #1565c0);
-            color: white;
-            font-size: 22px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #000;
+            font-size: 18px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 6px 20px rgba(25, 118, 210, 0.3);
-            z-index: 10;
+            transition: all 0.2s ease;
             display: flex;
             align-items: center;
             justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
         
-        .bottom-play-button:hover {
-            transform: translateX(-50%) scale(1.1);
-            box-shadow: 0 8px 25px rgba(25, 118, 210, 0.4);
+        .play-pause-btn:hover {
+            background: #fff;
+            transform: scale(1.05);
         }
         
-        .bottom-play-button:active {
-            transform: translateX(-50%) scale(0.95);
+        .play-pause-btn.playing {
+            background: #ff0000;
+            color: white;
         }
         
-        .bottom-play-button.playing {
-            background: linear-gradient(135deg, #ff9800, #f57c00);
-            box-shadow: 0 6px 20px rgba(255, 152, 0, 0.3);
-        }
-        
-        .bottom-play-button.playing:hover {
-            box-shadow: 0 8px 25px rgba(255, 152, 0, 0.4);
-        }
-        
-        /* Subtitle Text Above Play Button */
-        .subtitle-text {
-            position: absolute;
-            bottom: 120px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: #1976d2;
-            font-size: 18px;
-            font-weight: 600;
-            text-align: center;
-            max-width: 80%;
+        .video-subtitle {
+            flex: 1;
+            color: white;
+            font-size: 16px;
+            font-weight: 500;
             line-height: 1.4;
-            text-shadow: 0 2px 4px rgba(255, 255, 255, 0.8);
-            z-index: 10;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 12px 20px;
-            border-radius: 25px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+            max-width: 60%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .video-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.3);
+            z-index: 11;
+        }
+        
+        .video-progress-fill {
+            height: 100%;
+            background: #ff0000;
+            width: 0%;
+            transition: width 0.1s ease;
         }
         
         /* Audio Controls - Hidden */
@@ -935,18 +979,26 @@ const GuidedPresentationWithZoom = () => {
             }
             
             .pdf-viewer {
-                min-height: 50vh;
-                border-radius: 20px 20px 0 0;
-                margin: 20px 20px 0 20px;
+                height: 60vh;
+                margin: 0;
+                border-right: none;
+                border-bottom: 1px solid #e0e0e0;
+            }
+            
+            .pdf-container {
+                max-width: calc(100vw - 20px);
+                max-height: calc(60vh - 20px);
             }
             
             .slide-navigation {
                 width: 100%;
-                height: auto;
+                height: 40vh;
                 border-left: none;
                 border-top: 1px solid #e0e0e0;
-                border-radius: 0 0 20px 20px;
-                margin: 0 20px 20px 20px;
+            }
+            
+            .slide-navigation::before {
+                display: none;
             }
             
             .slide-list {
@@ -1005,33 +1057,39 @@ const GuidedPresentationWithZoom = () => {
                 <button class="zoom-btn" id="zoomIn" title="Zoom In (Ctrl + Plus)">+</button>
                 <button class="zoom-btn" id="zoomOut" title="Zoom Out (Ctrl + Minus)">−</button>
                 <button class="zoom-to-fit-btn" id="zoomToFit" title="Zoom to Fit (Ctrl + 0)">Fit</button>
-                <div class="zoom-level" id="zoomLevel">150%</div>
+                 <div class="zoom-level" id="zoomLevel">150%</div>
             </div>
             
-            <!-- Subtitle Text Above Play Button -->
-            <div class="subtitle-text" id="subtitleText">Click play to start the presentation</div>
-            
-            <!-- Bottom Play/Pause Button -->
-            <button class="bottom-play-button" id="bottomPlayBtn" onclick="togglePlay()">▶</button>
+            <!-- YouTube-style Video Player Controls -->
+            <div class="video-player-overlay">
+                <div class="video-controls">
+                    <button class="play-pause-btn" id="playPauseBtn" onclick="togglePlay()">▶</button>
+                    <div class="video-subtitle" id="videoSubtitle">Click play to start the presentation</div>
+                </div>
+                <div class="video-progress">
+                    <div class="video-progress-fill" id="progressFill"></div>
+                </div>
+            </div>
             
             <!-- PDF Container -->
             <div class="pdf-container" id="pdfContainer">
                 <img src="${imageDataUrl}" alt="PDF Page ${pageNumber}" class="pdf-background">
                 <div class="highlight-overlay" id="highlightOverlay">
-                ${alignedHighlights.map((highlight, index) => {
-                    const x = highlight.x * scaleX;
-                    const y = highlight.y * scaleY;
-                    const width = highlight.width * scaleX;
-                    const height = highlight.height * scaleY;
-                    const stepNumber = highlight.step;
-                    const needsReview = highlight.needsReview ? 'needs-review' : '';
-                    
-                    return `
-                        <div class="highlight-element ${needsReview}" id="highlight-${stepNumber - 1}" data-step="${stepNumber - 1}" style="left: ${x}px; top: ${y}px; width: ${width}px; height: ${height}px;">
-                            <div class="highlight-label">${stepNumber}</div>
-                        </div>
-                    `;
-                }).join('')}
+                 ${alignedHighlights.map((highlight, index) => {
+                     // Scale coordinates to match the PDF display size
+                     const x = highlight.x * scaleX;
+                     const y = highlight.y * scaleY;
+                     const width = highlight.width * scaleX;
+                     const height = highlight.height * scaleY;
+                     const stepNumber = highlight.step;
+                     const needsReview = highlight.needsReview ? 'needs-review' : '';
+                     
+                     return `
+                         <div class="highlight-element ${needsReview}" id="highlight-${stepNumber - 1}" data-step="${stepNumber - 1}" style="left: ${x}px; top: ${y}px; width: ${width}px; height: ${height}px;">
+                             <div class="highlight-label">${stepNumber}</div>
+                         </div>
+                     `;
+                 }).join('')}
                 </div>
             </div>
         </div>
@@ -1098,15 +1156,15 @@ const GuidedPresentationWithZoom = () => {
         let audioContext = null;
         let currentAudio = null;
         
-        // Zoom functionality
-        let currentZoom = 1.5; // Start at 150% for better readability
-        let minZoom = 0.25;
-        let maxZoom = 4.0;
-        let zoomStep = 0.25;
-        let isDragging = false;
-        let dragStart = { x: 0, y: 0 };
-        let currentPan = { x: 0, y: 0 };
-        let isPanning = false;
+         // Zoom functionality
+         let currentZoom = 1.5; // Start at 150% as requested
+         let minZoom = 0.5;
+         let maxZoom = 2.0;
+         let zoomStep = 0.25;
+         let isDragging = false;
+         let dragStart = { x: 0, y: 0 };
+         let currentPan = { x: 0, y: 0 };
+         let isPanning = false;
         
         function updateStep(step) {
             currentStep = step;
@@ -1189,7 +1247,7 @@ const GuidedPresentationWithZoom = () => {
         }
         
         function updatePlayButton() {
-            const playBtn = document.getElementById('bottomPlayBtn');
+            const playBtn = document.getElementById('playPauseBtn');
             if (!playBtn) return;
             
             if (isPlaying) {
@@ -1202,7 +1260,7 @@ const GuidedPresentationWithZoom = () => {
         }
         
         function updateSubtitle() {
-            const subtitleText = document.getElementById('subtitleText');
+            const subtitleText = document.getElementById('videoSubtitle');
             if (!subtitleText) return;
             
             if (narrativeScript && narrativeScript.steps && narrativeScript.steps[currentStep]) {
@@ -1290,23 +1348,24 @@ const GuidedPresentationWithZoom = () => {
             }
         }
         
-        // Zoom functionality
-        function updateZoom() {
-            const container = document.getElementById('pdfContainer');
-            const zoomLevel = document.getElementById('zoomLevel');
-            
-            if (container && zoomLevel) {
-                container.style.transform = \`scale(\${currentZoom}) translate(\${currentPan.x}px, \${currentPan.y}px)\`;
-                zoomLevel.textContent = Math.round(currentZoom * 100) + '%';
-                
-                // Update button states
-                const zoomInBtn = document.getElementById('zoomIn');
-                const zoomOutBtn = document.getElementById('zoomOut');
-                
-                if (zoomInBtn) zoomInBtn.disabled = currentZoom >= maxZoom;
-                if (zoomOutBtn) zoomOutBtn.disabled = currentZoom <= minZoom;
-            }
-        }
+         // Zoom functionality - Allow Y-axis movement to follow highlights
+         function updateZoom() {
+             const container = document.getElementById('pdfContainer');
+             const zoomLevel = document.getElementById('zoomLevel');
+             
+             if (container && zoomLevel) {
+                 // Allow Y-axis movement but keep X-axis centered
+                 container.style.transform = \`scale(\${currentZoom}) translate(0px, \${currentPan.y}px)\`;
+                 zoomLevel.textContent = Math.round(currentZoom * 100) + '%';
+                 
+                 // Update button states
+                 const zoomInBtn = document.getElementById('zoomIn');
+                 const zoomOutBtn = document.getElementById('zoomOut');
+                 
+                 if (zoomInBtn) zoomInBtn.disabled = currentZoom >= maxZoom;
+                 if (zoomOutBtn) zoomOutBtn.disabled = currentZoom <= minZoom;
+             }
+         }
         
         function zoomIn() {
             if (currentZoom < maxZoom) {
@@ -1340,80 +1399,54 @@ const GuidedPresentationWithZoom = () => {
             }
         }
         
-        function zoomToElement(elementIndex) {
-            if (elementIndex >= 0 && elementIndex < elements.length) {
-                const element = elements[elementIndex];
-                const viewer = document.getElementById('pdfViewer');
-                const container = document.getElementById('pdfContainer');
-                
-                if (viewer && container && element) {
-                    const viewerRect = viewer.getBoundingClientRect();
-                    const elementX = element.x;
-                    const elementY = element.y;
-                    const elementWidth = element.width;
-                    const elementHeight = element.height;
-                    
-                    // Calculate zoom level to fit element with generous padding
-                    const padding = 120; // More padding for better visibility
-                    const scaleX = (viewerRect.width - padding * 2) / elementWidth;
-                    const scaleY = (viewerRect.height - padding * 2) / elementHeight;
-                    const scale = Math.min(scaleX, scaleY, maxZoom);
-                    
-                    // Use a more reasonable zoom range (1.0x to 2.5x max for auto-zoom)
-                    currentZoom = Math.max(1.0, Math.min(2.5, scale));
-                    
-                    // Calculate the center of the element
-                    const elementCenterX = elementX + elementWidth / 2;
-                    const elementCenterY = elementY + elementHeight / 2;
-                    
-                    // Calculate the center of the viewer
-                    const viewerCenterX = viewerRect.width / 2;
-                    const viewerCenterY = viewerRect.height / 2;
-                    
-                    // Calculate pan to center the element in the viewer
-                    // We need to account for the current zoom level
-                    const panX = (viewerCenterX - elementCenterX) / currentZoom;
-                    const panY = (viewerCenterY - elementCenterY) / currentZoom;
-                    
-                    currentPan = {
-                        x: panX,
-                        y: panY
-                    };
-                    
-                    updateZoom();
-                }
-            }
-        }
+         function zoomToElement(elementIndex) {
+             if (elementIndex >= 0 && elementIndex < elements.length) {
+                 const element = elements[elementIndex];
+                 const viewer = document.getElementById('pdfViewer');
+                 const container = document.getElementById('pdfContainer');
+                 
+                 if (viewer && container && element) {
+                     // Set moderate zoom
+                     currentZoom = 1.5;
+                     
+                     // Calculate the center of the element
+                     const elementCenterX = element.x + element.width / 2;
+                     const elementCenterY = element.y + element.height / 2;
+                     
+                     // Calculate the center of the viewer
+                     const viewerRect = viewer.getBoundingClientRect();
+                     const viewerCenterX = viewerRect.width / 2;
+                     const viewerCenterY = viewerRect.height / 2;
+                     
+                     // Calculate pan to center the element in the viewer (Y-axis only)
+                     // We need to account for the current zoom level
+                     const panY = (viewerCenterY - elementCenterY) / currentZoom;
+                     
+                     // Keep X-axis centered, only move Y-axis
+                     currentPan = {
+                         x: 0, // Keep X-axis centered
+                         y: panY
+                     };
+                     
+                     updateZoom();
+                 }
+             }
+         }
         
-        // Pan functionality
-        function startPan(e) {
-            if (e.button === 0) { // Left mouse button
-                isPanning = true;
-                isDragging = true;
-                dragStart = { x: e.clientX - currentPan.x, y: e.clientY - currentPan.y };
-                document.getElementById('pdfViewer').classList.add('dragging');
-                e.preventDefault();
-            }
-        }
-        
-        function doPan(e) {
-            if (isPanning && isDragging) {
-                currentPan = {
-                    x: e.clientX - dragStart.x,
-                    y: e.clientY - dragStart.y
-                };
-                updateZoom();
-                e.preventDefault();
-            }
-        }
-        
-        function endPan(e) {
-            if (isPanning) {
-                isPanning = false;
-                isDragging = false;
-                document.getElementById('pdfViewer').classList.remove('dragging');
-            }
-        }
+         // Pan functionality - Disabled to keep PDF stable
+         function startPan(e) {
+             // Disable panning to keep PDF stable
+             e.preventDefault();
+         }
+         
+         function doPan(e) {
+             // Disable panning to keep PDF stable
+             e.preventDefault();
+         }
+         
+         function endPan(e) {
+             // Disable panning to keep PDF stable
+         }
         
         // Mouse wheel zoom
         function handleWheel(e) {
@@ -1473,9 +1506,9 @@ const GuidedPresentationWithZoom = () => {
         updateSubtitle();
         initializeZoom();
         
-        // Set initial zoom to a reasonable level
-        currentZoom = 1.5;
-        updateZoom();
+         // Set initial zoom to a reasonable level
+         currentZoom = 1.5;
+         updateZoom();
         
         // Keyboard navigation
         document.addEventListener('keydown', (e) => {
@@ -1515,8 +1548,17 @@ const GuidedPresentationWithZoom = () => {
   };
 
   return (
-    <div className="guided-presentation">
-      <div className="upload-section">
+    <div className="guided-presentation-modern">
+      {/* Modern Upload Section */}
+      <div className="upload-section-modern">
+        <div className="upload-content">
+          <div className="upload-icon">📄</div>
+          <div className="upload-text">
+            <h3>Upload Your PDF</h3>
+            <p>Transform your document into an interactive, narrated presentation</p>
+          </div>
+        </div>
+        
         <input
           type="file"
           ref={fileInputRef}
@@ -1524,77 +1566,153 @@ const GuidedPresentationWithZoom = () => {
           accept=".pdf"
           style={{ display: 'none' }}
         />
+        
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={isLoading}
-          className="upload-btn"
+          className="upload-btn-modern"
         >
-          {isLoading ? 'Processing...' : 'Upload PDF for Guided Presentation with Zoom'}
+          {isLoading ? (
+            <>
+              <div className="btn-spinner"></div>
+              <span>Processing...</span>
+            </>
+          ) : (
+            <>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7,10 12,15 17,10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              <span>Choose PDF File</span>
+            </>
+          )}
         </button>
       </div>
 
+      {/* Modern Status Messages */}
       {error && (
-        <div className="error-message">
-          {error}
+        <div className="status-message-modern error">
+          <div className="status-icon">⚠️</div>
+          <div className="status-content">
+            <div className="status-title">Upload Error</div>
+            <div className="status-description">{error}</div>
+          </div>
         </div>
       )}
 
       {isGeneratingNarrative && (
-        <div className="loading-message">
-          Generating narrative script...
+        <div className="status-message-modern generating">
+          <div className="status-spinner"></div>
+          <div className="status-content">
+            <div className="status-title">Generating narrative script...</div>
+            <div className="status-description">Using GPT-4o to create step-by-step presentation</div>
+          </div>
         </div>
       )}
 
       {narrativeError && (
-        <div className="error-message">
-          Narrative Error: {narrativeError}
+        <div className="status-message-modern error">
+          <div className="status-icon">❌</div>
+          <div className="status-content">
+            <div className="status-title">Failed to generate narrative script</div>
+            <div className="status-description">{narrativeError}</div>
+          </div>
         </div>
       )}
 
       {isGeneratingAudio && (
-        <div className="loading-message">
-          Generating audio...
+        <div className="status-message-modern generating">
+          <div className="status-spinner"></div>
+          <div className="status-content">
+            <div className="status-title">Generating audio narration...</div>
+            <div className="status-description">Creating synchronized audio for each step</div>
+          </div>
         </div>
       )}
 
       {audioError && (
-        <div className="error-message">
-          Audio Error: {audioError}
+        <div className="status-message-modern error">
+          <div className="status-icon">❌</div>
+          <div className="status-content">
+            <div className="status-title">Failed to generate audio</div>
+            <div className="status-description">{audioError}</div>
+          </div>
         </div>
       )}
 
+      {/* Modern Presentation Section */}
       {presentationHTML && (
-        <div className="presentation-container">
-          <div className="presentation-actions">
-            <button
-              onClick={() => {
-                const blob = new Blob([presentationHTML], { type: 'text/html' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `guided-presentation-with-zoom-page-${currentPage}.html`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-              }}
-              className="download-btn"
-            >
-              Download HTML with Zoom
-            </button>
+        <div className="presentation-section-modern">
+          <div className="presentation-header-modern">
+            <div className="presentation-icon">🎬</div>
+            <div className="presentation-text">
+              <h2>Your Guided Presentation is Ready!</h2>
+              <p>Interactive presentation with zoom controls and audio narration</p>
+            </div>
           </div>
           
-          <iframe
-            srcDoc={presentationHTML}
-            title="Guided Presentation with Zoom"
-            className="presentation-iframe"
-            style={{
-              width: '100%',
-              height: '600px',
-              border: '1px solid #ccc',
-              borderRadius: '8px'
-            }}
-          />
+          <div className="presentation-controls-modern">
+            <div className="page-controls-modern">
+              <button 
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage <= 1}
+                className="page-button-modern"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="15,18 9,12 15,6"></polyline>
+                </svg>
+                Previous
+              </button>
+              <div className="page-info-modern">
+                <span className="page-current">{currentPage}</span>
+                <span className="page-separator">of</span>
+                <span className="page-total">{totalPages}</span>
+              </div>
+              <button 
+                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage >= totalPages}
+                className="page-button-modern"
+              >
+                Next
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="9,18 15,12 9,6"></polyline>
+                </svg>
+              </button>
+            </div>
+            
+            <div className="action-section-modern">
+              <button
+                onClick={() => {
+                  const blob = new Blob([presentationHTML], { type: 'text/html' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `guided-presentation-with-zoom-page-${currentPage}.html`;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  URL.revokeObjectURL(url);
+                }}
+                className="action-button-modern"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7,10 12,15 17,10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Download HTML with Zoom
+              </button>
+            </div>
+          </div>
+          
+          <div className="presentation-preview-modern">
+            <iframe
+              srcDoc={presentationHTML}
+              title="Guided Presentation with Zoom"
+              className="presentation-iframe-modern"
+            />
+          </div>
         </div>
       )}
 
