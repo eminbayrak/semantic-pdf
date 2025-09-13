@@ -2359,7 +2359,7 @@ const GuidedPresentationWithZoom = () => {
       />
 
 
-      <style jsx>{`
+      <style>{`
         .guided-presentation-modern {
           min-height: auto;
           background: transparent;

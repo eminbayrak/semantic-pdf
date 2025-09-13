@@ -20,7 +20,7 @@ class GPTNarrativeGenerator {
 
     this.openai = new OpenAI({
       apiKey: apiKey,
-      baseURL: `${endpoint}openai/deployments/${deploymentName}`,
+      baseURL: `${endpoint.replace(/\/$/, '')}/openai/deployments/${deploymentName}`,
       defaultQuery: { 'api-version': '2024-02-15-preview' },
       defaultHeaders: {
         'api-key': apiKey,
