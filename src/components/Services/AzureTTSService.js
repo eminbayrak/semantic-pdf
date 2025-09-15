@@ -287,14 +287,30 @@ class AzureTTSService {
    */
   getAvailableVoices() {
     return [
-      { name: 'en-US-AriaNeural', displayName: 'Aria (Female, US)' },
-      { name: 'en-US-DavisNeural', displayName: 'Davis (Male, US)' },
-      { name: 'en-US-JennyNeural', displayName: 'Jenny (Female, US)' },
-      { name: 'en-US-GuyNeural', displayName: 'Guy (Male, US)' },
-      { name: 'en-US-AmberNeural', displayName: 'Amber (Female, US)' },
-      { name: 'en-US-AshleyNeural', displayName: 'Ashley (Female, US)' },
-      { name: 'en-US-BrandonNeural', displayName: 'Brandon (Male, US)' },
-      { name: 'en-US-ChristopherNeural', displayName: 'Christopher (Male, US)' }
+      // US English Voices
+      { name: 'en-US-AriaNeural', displayName: 'Aria (Female, US)', region: 'US' },
+      { name: 'en-US-DavisNeural', displayName: 'Davis (Male, US)', region: 'US' },
+      { name: 'en-US-JennyNeural', displayName: 'Jenny (Female, US)', region: 'US' },
+      { name: 'en-US-GuyNeural', displayName: 'Guy (Male, US)', region: 'US' },
+      { name: 'en-US-AmberNeural', displayName: 'Amber (Female, US)', region: 'US' },
+      { name: 'en-US-AshleyNeural', displayName: 'Ashley (Female, US)', region: 'US' },
+      { name: 'en-US-BrandonNeural', displayName: 'Brandon (Male, US)', region: 'US' },
+      { name: 'en-US-ChristopherNeural', displayName: 'Christopher (Male, US)', region: 'US' },
+      
+      // British English Voices
+      { name: 'en-GB-SoniaNeural', displayName: 'Sonia (Female, British)', region: 'UK' },
+      { name: 'en-GB-RyanNeural', displayName: 'Ryan (Male, British)', region: 'UK' },
+      { name: 'en-GB-LibbyNeural', displayName: 'Libby (Female, British)', region: 'UK' },
+      { name: 'en-GB-ThomasNeural', displayName: 'Thomas (Male, British)', region: 'UK' },
+      { name: 'en-GB-MaisieNeural', displayName: 'Maisie (Female, British)', region: 'UK' },
+      { name: 'en-GB-NoahNeural', displayName: 'Noah (Male, British)', region: 'UK' },
+      
+      // Australian English Voices
+      { name: 'en-AU-NatashaNeural', displayName: 'Natasha (Female, Australian)', region: 'AU' },
+      { name: 'en-AU-WilliamNeural', displayName: 'William (Male, Australian)', region: 'AU' },
+      { name: 'en-AU-FreyaNeural', displayName: 'Freya (Female, Australian)', region: 'AU' },
+      { name: 'en-AU-KenNeural', displayName: 'Ken (Male, Australian)', region: 'AU' },
+      { name: 'en-AU-TimNeural', displayName: 'Tim (Male, Australian)', region: 'AU' }
     ];
   }
 
@@ -328,6 +344,39 @@ class AzureTTSService {
       console.warn(`Voice '${voiceName}' not found. Using random voice instead.`);
       this.currentNarrativeVoice = this.getRandomVoice();
     }
+  }
+
+  /**
+   * Get voices by region/accent
+   * @param {string} region - Region code ('US', 'UK', 'AU')
+   * @returns {Array} Voices for the specified region
+   */
+  getVoicesByRegion(region) {
+    return this.availableVoices.filter(voice => voice.region === region);
+  }
+
+  /**
+   * Get a random voice from a specific region
+   * @param {string} region - Region code ('US', 'UK', 'AU')
+   * @returns {Object} Random voice from the specified region
+   */
+  getRandomVoiceByRegion(region) {
+    const regionalVoices = this.getVoicesByRegion(region);
+    if (regionalVoices.length === 0) {
+      console.warn(`No voices found for region '${region}'. Using random voice instead.`);
+      return this.getRandomVoice();
+    }
+    const randomIndex = Math.floor(Math.random() * regionalVoices.length);
+    return regionalVoices[randomIndex];
+  }
+
+  /**
+   * Set narrative voice by region/accent
+   * @param {string} region - Region code ('US', 'UK', 'AU')
+   */
+  setNarrativeVoiceByRegion(region) {
+    this.currentNarrativeVoice = this.getRandomVoiceByRegion(region);
+    console.log(`🎭 Set narrative voice to random ${region} accent: ${this.currentNarrativeVoice.displayName}`);
   }
 
   /**

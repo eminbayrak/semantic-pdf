@@ -91,7 +91,7 @@ function App() {
 
       {/* Main Content */}
       <main className="app-main">
-        {/* Error Display */}
+        {/* Error Display with Liquid Glass */}
         {error && (
           <div className="error-message">
             <div className="error-content">

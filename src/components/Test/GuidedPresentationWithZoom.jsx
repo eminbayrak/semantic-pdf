@@ -2382,23 +2382,43 @@ const GuidedPresentationWithZoom = () => {
 
         .upload-zone {
           border: 3px dashed #ff642b;
-          border-radius: 8px;
+          border-radius: 1.5rem;
           padding: 24px 20px;
           text-align: center;
-          background: #ffffff;
+          background: rgba(255, 255, 255, 0.6);
+          backdrop-filter: blur(10px) saturate(180%);
           cursor: pointer;
           transition: all 0.3s ease;
           max-width: 500px;
           width: 100%;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+          box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08), 
+                      inset 0 2px 12px rgba(255, 255, 255, 0.9);
           position: relative;
+        }
+
+        .upload-zone::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(255, 255, 255, 0.2);
+          border-radius: 1.5rem;
+          backdrop-filter: blur(1px);
+          box-shadow: inset -8px -6px 0px -9px rgba(255, 255, 255, 0.9),
+                      inset 0px -7px 0px -6px rgba(255, 255, 255, 0.9);
+          opacity: 0.9;
+          z-index: -1;
+          filter: blur(0.5px) brightness(105%);
         }
 
         .upload-zone:hover {
           border-color: #e55a2b;
-          background: #fff7f4;
+          background: rgba(255, 247, 244, 0.8);
           transform: translateY(-2px);
-          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+          box-shadow: 0 16px 50px rgba(0, 0, 0, 0.12), 
+                      inset 0 2px 12px rgba(255, 255, 255, 0.95);
         }
 
         .upload-zone:focus {
@@ -2459,19 +2479,39 @@ const GuidedPresentationWithZoom = () => {
           border: 1px solid #e5e7eb;
         }
 
-        /* File Thumbnail - Compact Design */
+        /* File Thumbnail - Compact Design with Liquid Glass */
         .file-thumbnail {
           display: flex;
           align-items: center;
           gap: 16px;
           padding: 16px 20px;
-          background: #ffffff;
-          border: 2px solid #e2e8f0;
-          border-radius: 8px;
+          background: rgba(255, 255, 255, 0.6);
+          backdrop-filter: blur(10px) saturate(180%);
+          border: 1px solid rgba(255, 255, 255, 0.8);
+          border-radius: 1.5rem;
           max-width: 450px;
           width: 100%;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+          box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08), 
+                      inset 0 2px 12px rgba(255, 255, 255, 0.9);
           transition: all 0.3s ease;
+          position: relative;
+        }
+
+        .file-thumbnail::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(255, 255, 255, 0.2);
+          border-radius: 1.5rem;
+          backdrop-filter: blur(1px);
+          box-shadow: inset -8px -6px 0px -9px rgba(255, 255, 255, 0.9),
+                      inset 0px -7px 0px -6px rgba(255, 255, 255, 0.9);
+          opacity: 0.9;
+          z-index: -1;
+          filter: blur(0.5px) brightness(105%);
         }
 
         .file-thumbnail:hover {
@@ -2736,10 +2776,11 @@ const GuidedPresentationWithZoom = () => {
         }
 
         .download-btn {
-          background: linear-gradient(135deg, #002677 0%, #003d99 100%);
+          background: rgba(0, 38, 119, 0.8);
+          backdrop-filter: blur(10px) saturate(180%);
           color: white;
-          border: none;
-          border-radius: 12px;
+          border: 1px solid rgba(255, 255, 255, 0.3);
+          border-radius: 1.5rem;
           padding: 16px 32px;
           font-size: 18px;
           font-weight: 700;
@@ -2748,17 +2789,36 @@ const GuidedPresentationWithZoom = () => {
           align-items: center;
           gap: 12px;
           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          box-shadow: 0 4px 12px rgba(0, 38, 119, 0.3);
+          box-shadow: 0 12px 40px rgba(0, 38, 119, 0.2), 
+                      inset 0 2px 12px rgba(255, 255, 255, 0.2);
           letter-spacing: -0.01em;
           min-height: 48px;
-          border: 2px solid transparent;
+          position: relative;
+        }
+
+        .download-btn::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 1.5rem;
+          backdrop-filter: blur(1px);
+          box-shadow: inset -8px -6px 0px -9px rgba(255, 255, 255, 0.6),
+                      inset 0px -7px 0px -6px rgba(255, 255, 255, 0.6);
+          opacity: 0.8;
+          z-index: -1;
+          filter: blur(0.5px) brightness(110%);
         }
 
         .download-btn:hover {
-          background: linear-gradient(135deg, #003d99 0%, #0044aa 100%);
+          background: rgba(0, 61, 153, 0.9);
           transform: translateY(-2px);
-          box-shadow: 0 8px 16px rgba(0, 38, 119, 0.4);
-          border-color: #60a5fa;
+          box-shadow: 0 16px 50px rgba(0, 38, 119, 0.3), 
+                      inset 0 2px 12px rgba(255, 255, 255, 0.3);
+          border-color: rgba(255, 255, 255, 0.5);
         }
 
         .download-btn:active {
