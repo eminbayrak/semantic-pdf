@@ -282,12 +282,12 @@ class AzureTTSService {
   }
 
   /**
-   * Get available voices
+   * Get available voices (Updated for 2025 - Over 600 neural voices available)
    * @returns {Array} List of available voices
    */
   getAvailableVoices() {
     return [
-      // US English Voices
+      // US English Voices (Expanded 2025)
       { name: 'en-US-AriaNeural', displayName: 'Aria (Female, US)', region: 'US' },
       { name: 'en-US-DavisNeural', displayName: 'Davis (Male, US)', region: 'US' },
       { name: 'en-US-JennyNeural', displayName: 'Jenny (Female, US)', region: 'US' },
@@ -296,21 +296,86 @@ class AzureTTSService {
       { name: 'en-US-AshleyNeural', displayName: 'Ashley (Female, US)', region: 'US' },
       { name: 'en-US-BrandonNeural', displayName: 'Brandon (Male, US)', region: 'US' },
       { name: 'en-US-ChristopherNeural', displayName: 'Christopher (Male, US)', region: 'US' },
+      { name: 'en-US-CoraNeural', displayName: 'Cora (Female, US)', region: 'US' },
+      { name: 'en-US-ElizabethNeural', displayName: 'Elizabeth (Female, US)', region: 'US' },
+      { name: 'en-US-EmmaNeural', displayName: 'Emma (Female, US)', region: 'US' },
+      { name: 'en-US-EricNeural', displayName: 'Eric (Male, US)', region: 'US' },
+      { name: 'en-US-JacobNeural', displayName: 'Jacob (Male, US)', region: 'US' },
+      { name: 'en-US-JaneNeural', displayName: 'Jane (Female, US)', region: 'US' },
+      { name: 'en-US-JasonNeural', displayName: 'Jason (Male, US)', region: 'US' },
+      { name: 'en-US-MichelleNeural', displayName: 'Michelle (Female, US)', region: 'US' },
+      { name: 'en-US-MonicaNeural', displayName: 'Monica (Female, US)', region: 'US' },
+      { name: 'en-US-NancyNeural', displayName: 'Nancy (Female, US)', region: 'US' },
+      { name: 'en-US-RogerNeural', displayName: 'Roger (Male, US)', region: 'US' },
+      { name: 'en-US-SaraNeural', displayName: 'Sara (Female, US)', region: 'US' },
+      { name: 'en-US-TonyNeural', displayName: 'Tony (Male, US)', region: 'US' },
       
-      // British English Voices
+      // British English Voices (Expanded 2025)
       { name: 'en-GB-SoniaNeural', displayName: 'Sonia (Female, British)', region: 'UK' },
       { name: 'en-GB-RyanNeural', displayName: 'Ryan (Male, British)', region: 'UK' },
       { name: 'en-GB-LibbyNeural', displayName: 'Libby (Female, British)', region: 'UK' },
       { name: 'en-GB-ThomasNeural', displayName: 'Thomas (Male, British)', region: 'UK' },
       { name: 'en-GB-MaisieNeural', displayName: 'Maisie (Female, British)', region: 'UK' },
       { name: 'en-GB-NoahNeural', displayName: 'Noah (Male, British)', region: 'UK' },
+      { name: 'en-GB-AlfieNeural', displayName: 'Alfie (Male, British)', region: 'UK' },
+      { name: 'en-GB-BellaNeural', displayName: 'Bella (Female, British)', region: 'UK' },
+      { name: 'en-GB-ElliotNeural', displayName: 'Elliot (Male, British)', region: 'UK' },
+      { name: 'en-GB-EthanNeural', displayName: 'Ethan (Male, British)', region: 'UK' },
+      { name: 'en-GB-HollieNeural', displayName: 'Hollie (Female, British)', region: 'UK' },
+      { name: 'en-GB-JamesNeural', displayName: 'James (Male, British)', region: 'UK' },
+      { name: 'en-GB-JessicaNeural', displayName: 'Jessica (Female, British)', region: 'UK' },
+      { name: 'en-GB-OliverNeural', displayName: 'Oliver (Male, British)', region: 'UK' },
+      { name: 'en-GB-OliviaNeural', displayName: 'Olivia (Female, British)', region: 'UK' },
       
-      // Australian English Voices
+      // Australian English Voices (Expanded 2025)
       { name: 'en-AU-NatashaNeural', displayName: 'Natasha (Female, Australian)', region: 'AU' },
       { name: 'en-AU-WilliamNeural', displayName: 'William (Male, Australian)', region: 'AU' },
       { name: 'en-AU-FreyaNeural', displayName: 'Freya (Female, Australian)', region: 'AU' },
       { name: 'en-AU-KenNeural', displayName: 'Ken (Male, Australian)', region: 'AU' },
-      { name: 'en-AU-TimNeural', displayName: 'Tim (Male, Australian)', region: 'AU' }
+      { name: 'en-AU-TimNeural', displayName: 'Tim (Male, Australian)', region: 'AU' },
+      { name: 'en-AU-DuncanNeural', displayName: 'Duncan (Male, Australian)', region: 'AU' },
+      { name: 'en-AU-ElsieNeural', displayName: 'Elsie (Female, Australian)', region: 'AU' },
+      { name: 'en-AU-HayleyNeural', displayName: 'Hayley (Female, Australian)', region: 'AU' },
+      { name: 'en-AU-JoanneNeural', displayName: 'Joanne (Female, Australian)', region: 'AU' },
+      { name: 'en-AU-MitchellNeural', displayName: 'Mitchell (Male, Australian)', region: 'AU' },
+      { name: 'en-AU-NeilNeural', displayName: 'Neil (Male, Australian)', region: 'AU' },
+      { name: 'en-AU-RussellNeural', displayName: 'Russell (Male, Australian)', region: 'AU' },
+      { name: 'en-AU-TinaNeural', displayName: 'Tina (Female, Australian)', region: 'AU' },
+      
+      // Canadian English Voices
+      { name: 'en-CA-ClaraNeural', displayName: 'Clara (Female, Canadian)', region: 'CA' },
+      { name: 'en-CA-LiamNeural', displayName: 'Liam (Male, Canadian)', region: 'CA' },
+      
+      // // Indian English Voices
+      // { name: 'en-IN-NeerjaNeural', displayName: 'Neerja (Female, Indian)', region: 'IN' },
+      // { name: 'en-IN-PrabhatNeural', displayName: 'Prabhat (Male, Indian)', region: 'IN' },
+      // { name: 'en-IN-RaviNeural', displayName: 'Ravi (Male, Indian)', region: 'IN' },
+      
+      // // Irish English Voices
+      // { name: 'en-IE-EmilyNeural', displayName: 'Emily (Female, Irish)', region: 'IE' },
+      // { name: 'en-IE-ConnorNeural', displayName: 'Connor (Male, Irish)', region: 'IE' },
+      
+      // // New Zealand English Voices
+      // { name: 'en-NZ-MollyNeural', displayName: 'Molly (Female, New Zealand)', region: 'NZ' },
+      // { name: 'en-NZ-MitchellNeural', displayName: 'Mitchell (Male, New Zealand)', region: 'NZ' },
+      
+      // // South African English Voices
+      // { name: 'en-ZA-LeanneNeural', displayName: 'Leanne (Female, South African)', region: 'ZA' },
+      // { name: 'en-ZA-LukeNeural', displayName: 'Luke (Male, South African)', region: 'ZA' },
+      
+      // // Welsh English Voices
+      // { name: 'en-WL-AledNeural', displayName: 'Aled (Male, Welsh)', region: 'WL' },
+      // { name: 'en-WL-NiaNeural', displayName: 'Nia (Female, Welsh)', region: 'WL' },
+      
+      // // Premium/HD Voices (2025)
+      // { name: 'en-US-AriaNeural-Premium', displayName: 'Aria HD (Female, US)', region: 'US', premium: true },
+      // { name: 'en-US-DavisNeural-Premium', displayName: 'Davis HD (Male, US)', region: 'US', premium: true },
+      // { name: 'en-US-JennyNeural-Premium', displayName: 'Jenny HD (Female, US)', region: 'US', premium: true },
+      // { name: 'en-US-GuyNeural-Premium', displayName: 'Guy HD (Male, US)', region: 'US', premium: true },
+      // { name: 'en-GB-SoniaNeural-Premium', displayName: 'Sonia HD (Female, British)', region: 'UK', premium: true },
+      // { name: 'en-GB-RyanNeural-Premium', displayName: 'Ryan HD (Male, British)', region: 'UK', premium: true },
+      // { name: 'en-AU-NatashaNeural-Premium', displayName: 'Natasha HD (Female, Australian)', region: 'AU', premium: true },
+      // { name: 'en-AU-WilliamNeural-Premium', displayName: 'William HD (Male, Australian)', region: 'AU', premium: true }
     ];
   }
 
@@ -372,11 +437,86 @@ class AzureTTSService {
 
   /**
    * Set narrative voice by region/accent
-   * @param {string} region - Region code ('US', 'UK', 'AU')
+   * @param {string} region - Region code ('US', 'UK', 'AU', 'CA', 'IN', 'IE', 'NZ', 'ZA', 'WL')
    */
   setNarrativeVoiceByRegion(region) {
     this.currentNarrativeVoice = this.getRandomVoiceByRegion(region);
     console.log(`🎭 Set narrative voice to random ${region} accent: ${this.currentNarrativeVoice.displayName}`);
+  }
+
+  /**
+   * Get only premium/HD voices
+   * @returns {Array} List of premium voices
+   */
+  getPremiumVoices() {
+    return this.availableVoices.filter(voice => voice.premium === true);
+  }
+
+  /**
+   * Get only standard voices (non-premium)
+   * @returns {Array} List of standard voices
+   */
+  getStandardVoices() {
+    return this.availableVoices.filter(voice => !voice.premium);
+  }
+
+  /**
+   * Get a random premium voice
+   * @returns {Object} Random premium voice object
+   */
+  getRandomPremiumVoice() {
+    const premiumVoices = this.getPremiumVoices();
+    if (premiumVoices.length === 0) {
+      console.warn('No premium voices available. Using random standard voice instead.');
+      return this.getRandomVoice();
+    }
+    const randomIndex = Math.floor(Math.random() * premiumVoices.length);
+    return premiumVoices[randomIndex];
+  }
+
+  /**
+   * Get voices by gender
+   * @param {string} gender - 'male' or 'female'
+   * @returns {Array} Voices matching the specified gender
+   */
+  getVoicesByGender(gender) {
+    const genderLower = gender.toLowerCase();
+    return this.availableVoices.filter(voice => {
+      const displayName = voice.displayName.toLowerCase();
+      return displayName.includes(`(${genderLower}`);
+    });
+  }
+
+  /**
+   * Get a random voice by gender
+   * @param {string} gender - 'male' or 'female'
+   * @returns {Object} Random voice of specified gender
+   */
+  getRandomVoiceByGender(gender) {
+    const genderVoices = this.getVoicesByGender(gender);
+    if (genderVoices.length === 0) {
+      console.warn(`No ${gender} voices found. Using random voice instead.`);
+      return this.getRandomVoice();
+    }
+    const randomIndex = Math.floor(Math.random() * genderVoices.length);
+    return genderVoices[randomIndex];
+  }
+
+  /**
+   * Get total voice count
+   * @returns {number} Total number of available voices
+   */
+  getTotalVoiceCount() {
+    return this.availableVoices.length;
+  }
+
+  /**
+   * Get voice count by region
+   * @param {string} region - Region code
+   * @returns {number} Number of voices for the specified region
+   */
+  getVoiceCountByRegion(region) {
+    return this.getVoicesByRegion(region).length;
   }
 
   /**
