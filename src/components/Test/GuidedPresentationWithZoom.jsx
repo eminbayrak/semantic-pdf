@@ -1886,8 +1886,8 @@ const GuidedPresentationWithZoom = () => {
                  const container = document.getElementById('pdfContainer');
                  
                  if (viewer && container && element) {
-                     // Set moderate zoom
-                     currentZoom = 1.5;
+                     // Preserve current zoom level - don't reset it
+                     // Only adjust pan position to center the element
                      
                      // Calculate the center of the element
                      const elementCenterX = element.x + element.width / 2;
