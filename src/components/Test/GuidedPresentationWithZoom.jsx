@@ -284,6 +284,12 @@ const GuidedPresentationWithZoom = () => {
       const stepText = step.highlightText || step.narrative || '';
       const normalizedStepText = normalizeText(stepText);
       
+      console.log(`\n🔍 STEP ${stepIndex + 1} ALIGNMENT:`);
+      console.log(`GPT Step Number: ${step.stepNumber}`);
+      console.log(`Array Index: ${stepIndex}`);
+      console.log(`Final Step Number: ${step.stepNumber || (stepIndex + 1)}`);
+      console.log(`Highlight Text: "${stepText}"`);
+      
       const availableElements = htmlElements.filter(element => !usedElementIds.has(element.id));
       
       const elementScores = availableElements.map(element => ({
@@ -323,21 +329,21 @@ const GuidedPresentationWithZoom = () => {
         
         const mergedElement = mergeHTMLElements(elementsToMerge);
         if (mergedElement) {
-          const highlight = {
-            id: `highlight-${stepIndex}`,
-            step: stepIndex + 1,
-            x: mergedElement.x,
-            y: mergedElement.y,
-            width: mergedElement.width,
-            height: mergedElement.height,
-            text: mergedElement.text,
-            narrationText: stepText,
-            narrative: step.narrative,
-            fontSize: mergedElement.fontSize,
-            fontFamily: mergedElement.fontFamily,
-            isMerged: mergedElement.isMerged,
-            elements: mergedElement.elements || [mergedElement]
-          };
+        const highlight = {
+          id: `highlight-${stepIndex}`,
+          step: step.stepNumber || (stepIndex + 1), // Use GPT's stepNumber if available
+          x: mergedElement.x,
+          y: mergedElement.y,
+          width: mergedElement.width,
+          height: mergedElement.height,
+          text: mergedElement.text,
+          narrationText: stepText,
+          narrative: step.narrative,
+          fontSize: mergedElement.fontSize,
+          fontFamily: mergedElement.fontFamily,
+          isMerged: mergedElement.isMerged,
+          elements: mergedElement.elements || [mergedElement]
+        };
           
           alignedHighlights.push(highlight);
           elementsToMerge.forEach(element => usedElementIds.add(element.id));
@@ -345,7 +351,7 @@ const GuidedPresentationWithZoom = () => {
       } else {
         const needsReviewHighlight = {
           id: `needs-review-${stepIndex}`,
-          step: stepIndex + 1,
+          step: step.stepNumber || (stepIndex + 1), // Use GPT's stepNumber if available
           x: 50,
           y: 50 + (stepIndex * 100),
           width: 200,
