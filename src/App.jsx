@@ -72,17 +72,16 @@ function App() {
       <header className="flat-header">
         <div className="header-container">
           <div className="header-brand">
-            <div className="brand-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                <polyline points="14,2 14,8 20,8"></polyline>
-                <line x1="16" y1="13" x2="8" y2="13"></line>
-                <line x1="16" y1="17" x2="8" y2="17"></line>
-                <polyline points="10,9 9,9 8,9"></polyline>
-              </svg>
+            <div>
+            <div>
+              <img 
+                src="/src/assets/optum-logo-ora-rgb1.svg" 
+                alt="Optum Logo" 
+                width="120" 
+                height="35"
+              />
             </div>
-            <div className="brand-text">
-              <h1>EOBify</h1>
+              {/* <h1>Optum</h1> */}
               <span className="brand-subtitle">Smart Document Processing</span>
             </div>
           </div>
@@ -143,7 +142,7 @@ function App() {
       <footer className="modern-footer">
         <div className="footer-container">
           <div className="footer-bottom">
-            <p>&copy; 2025 EOB Document Processor. All rights reserved.</p>
+            <p>&copy; 2025 Optum. All rights reserved.</p>
             <div className="footer-links">
               <a href="#" className="footer-link">Privacy Policy</a>
               <a href="#" className="footer-link">Terms of Service</a>
