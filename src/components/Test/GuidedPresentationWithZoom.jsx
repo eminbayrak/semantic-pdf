@@ -228,13 +228,12 @@ const GuidedPresentationWithZoom = () => {
     
     // Prioritize exact phrase matches
     if (normalized1.includes(normalized2)) {
-      return 0.95; // Target text contains element text
+      return 0.98; // Target text contains element text
     }
     if (normalized2.includes(normalized1)) {
-      return 0.9; // Element text contains target text
+      return 0.95; // Element text contains target text
     }
     
-    // For longer target texts, require more word overlap
     const words1 = normalized1.split(' ').filter(w => w.length > 1);
     const words2 = normalized2.split(' ').filter(w => w.length > 1);
     
@@ -250,15 +249,43 @@ const GuidedPresentationWithZoom = () => {
     const longer = words1.length >= words2.length ? words1 : words2;
     const containmentScore = shorter.filter(word => longer.includes(word)).length / shorter.length;
     
-    // For longer target texts, require higher containment
-    const baseScore = Math.max(jaccard, containmentScore * 0.8);
-    
-    // Penalize very short matches for longer target texts
-    if (words1.length > 5 && words2.length < 3) {
-      return baseScore * 0.3; // Heavy penalty for short matches on long targets
+    // Calculate phrase matching bonus
+    let phraseBonus = 0;
+    if (words1.length > 2 && words2.length > 2) {
+      // Look for consecutive word matches
+      const words1Str = words1.join(' ');
+      const words2Str = words2.join(' ');
+      
+      // Check for 2+ consecutive words
+      for (let i = 0; i <= words1.length - 2; i++) {
+        const phrase = words1.slice(i, i + 2).join(' ');
+        if (words2Str.includes(phrase)) {
+          phraseBonus += 0.1;
+        }
+      }
+      
+      // Check for 3+ consecutive words
+      for (let i = 0; i <= words1.length - 3; i++) {
+        const phrase = words1.slice(i, i + 3).join(' ');
+        if (words2Str.includes(phrase)) {
+          phraseBonus += 0.2;
+        }
+      }
     }
     
-    return baseScore;
+    const baseScore = Math.max(jaccard, containmentScore * 0.8) + phraseBonus;
+    
+    // Heavy penalty for very short matches on long targets
+    if (words1.length > 5 && words2.length < 3) {
+      return baseScore * 0.2;
+    }
+    
+    // Moderate penalty for short matches on medium targets
+    if (words1.length > 3 && words2.length < 2) {
+      return baseScore * 0.5;
+    }
+    
+    return Math.min(baseScore, 1.0);
   };
 
   // Merge nearby HTML elements into one bounding box
@@ -314,11 +341,30 @@ const GuidedPresentationWithZoom = () => {
       }));
 
       elementScores.sort((a, b) => {
+        // First priority: exact matches
         if (a.exactMatch && !b.exactMatch) return -1;
         if (!a.exactMatch && b.exactMatch) return 1;
+        
+        // Second priority: keyword matches
         if (a.keywordMatch && !b.keywordMatch) return -1;
         if (!a.keywordMatch && b.keywordMatch) return 1;
-        return b.similarity - a.similarity;
+        
+        // Third priority: similarity score
+        if (Math.abs(a.similarity - b.similarity) > 0.01) {
+          return b.similarity - a.similarity;
+        }
+        
+        // Fourth priority: longer text (more complete matches)
+        const aTextLength = a.element.text.trim().length;
+        const bTextLength = b.element.text.trim().length;
+        if (aTextLength !== bTextLength) {
+          return bTextLength - aTextLength;
+        }
+        
+        // Fifth priority: more words
+        const aWordCount = a.element.text.trim().split(/\s+/).length;
+        const bWordCount = b.element.text.trim().split(/\s+/).length;
+        return bWordCount - aWordCount;
       });
 
       const bestMatch = elementScores[0];
@@ -382,7 +428,7 @@ const GuidedPresentationWithZoom = () => {
         if (targetWords.length > 1) {
           console.log('  Trying to find multi-word phrase...');
           
-          // Look for elements that contain multiple target words
+          // Strategy 1: Look for single elements with multiple target words
           const phraseElements = availableElements.filter(element => {
             const elementWords = normalizeText(element.text).split(' ').filter(w => w.length > 2);
             const matchingWords = targetWords.filter(word => elementWords.includes(word));
@@ -390,17 +436,19 @@ const GuidedPresentationWithZoom = () => {
           });
           
           if (phraseElements.length > 0) {
-            // Sort by number of matching words
+            // Sort by number of matching words and text length
             phraseElements.sort((a, b) => {
               const aWords = normalizeText(a.text).split(' ').filter(w => w.length > 2);
               const bWords = normalizeText(b.text).split(' ').filter(w => w.length > 2);
               const aMatches = targetWords.filter(word => aWords.includes(word)).length;
               const bMatches = targetWords.filter(word => bWords.includes(word)).length;
-              return bMatches - aMatches;
+              
+              if (aMatches !== bMatches) return bMatches - aMatches;
+              return b.text.length - a.text.length;
             });
             
             const bestPhraseMatch = phraseElements[0];
-            console.log('  Found phrase match: "' + bestPhraseMatch.text.substring(0, 40) + '"');
+            console.log('  Found single element phrase: "' + bestPhraseMatch.text.substring(0, 40) + '"');
             
             const highlight = {
               id: `highlight-${stepIndex}`,
@@ -421,6 +469,76 @@ const GuidedPresentationWithZoom = () => {
             alignedHighlights.push(highlight);
             usedElementIds.add(bestPhraseMatch.id);
             return;
+          }
+          
+          // Strategy 2: Look for nearby elements that together form the phrase
+          console.log('  Trying to find multi-element phrase...');
+          const nearbyElements = availableElements.filter(element => {
+            const elementWords = normalizeText(element.text).split(' ').filter(w => w.length > 2);
+            return targetWords.some(word => elementWords.includes(word));
+          });
+          
+          if (nearbyElements.length > 1) {
+            // Try to find elements that are close together and contain the phrase
+            const sortedElements = nearbyElements.sort((a, b) => {
+              const aMatches = targetWords.filter(word => 
+                normalizeText(a.text).split(' ').includes(word)
+              ).length;
+              const bMatches = targetWords.filter(word => 
+                normalizeText(b.text).split(' ').includes(word)
+              ).length;
+              return bMatches - aMatches;
+            });
+            
+            // Look for 2-3 nearby elements that together contain most target words
+            for (let i = 0; i < Math.min(3, sortedElements.length); i++) {
+              const element1 = sortedElements[i];
+              const remainingElements = sortedElements.slice(i + 1);
+              
+              for (let j = 0; j < Math.min(2, remainingElements.length); j++) {
+                const element2 = remainingElements[j];
+                
+                // Check if they're close together (within 100px)
+                const distance = Math.sqrt(
+                  Math.pow(element1.x - element2.x, 2) + 
+                  Math.pow(element1.y - element2.y, 2)
+                );
+                
+                if (distance < 100) {
+                  const combinedText = normalizeText(element1.text + ' ' + element2.text);
+                  const combinedWords = combinedText.split(' ').filter(w => w.length > 2);
+                  const matchingWords = targetWords.filter(word => combinedWords.includes(word));
+                  
+                  if (matchingWords.length >= Math.min(3, targetWords.length)) {
+                    console.log('  Found multi-element phrase: "' + element1.text + ' ' + element2.text + '"');
+                    
+                    const mergedElement = mergeHTMLElements([element1, element2]);
+                    if (mergedElement) {
+                      const highlight = {
+                        id: `highlight-${stepIndex}`,
+                        step: step.stepNumber || (stepIndex + 1),
+                        x: mergedElement.x,
+                        y: mergedElement.y,
+                        width: mergedElement.width,
+                        height: mergedElement.height,
+                        text: mergedElement.text,
+                        narrationText: stepText,
+                        narrative: step.narrative,
+                        fontSize: mergedElement.fontSize,
+                        fontFamily: mergedElement.fontFamily,
+                        isMerged: true,
+                        elements: [element1, element2]
+                      };
+                      
+                      alignedHighlights.push(highlight);
+                      usedElementIds.add(element1.id);
+                      usedElementIds.add(element2.id);
+                      return;
+                    }
+                  }
+                }
+              }
+            }
           }
         }
         
