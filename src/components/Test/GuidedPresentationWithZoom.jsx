@@ -105,7 +105,7 @@ const GuidedPresentationWithZoom = () => {
       await page.render(renderContext).promise;
       
       // Convert PDF to HTML using pdf2htmlEX
-      const htmlData = await convertPDFToHTML(file);
+      const htmlData = await convertPDFToHTML(file, baseViewport);
       
       // Parse HTML elements with coordinates
       const htmlElements = parseHTMLElements(htmlData);
@@ -150,13 +150,14 @@ const GuidedPresentationWithZoom = () => {
   };
 
   // Convert PDF to HTML using pdf2htmlEX (simulated)
-  const convertPDFToHTML = async (pdfFile) => {
-    console.log('🔄 Converting PDF to HTML using pdf2htmlEX...');
-    
+  const convertPDFToHTML = async (pdfFile, targetViewport) => {
     const pdf = await pdfjsLib.getDocument(URL.createObjectURL(pdfFile)).promise;
     const page = await pdf.getPage(1);
     const textContent = await page.getTextContent();
-    const viewport = page.getViewport({ scale: 1 });
+    // Use the same viewport as the rendering to ensure coordinate consistency
+    const viewport = page.getViewport({ scale: targetViewport.scale });
+    
+    console.log('📐 PDF Viewport:', viewport.width + 'x' + viewport.height + ' (scale: ' + viewport.scale + ')');
     
     // Create HTML-like structure with coordinates
     const htmlElements = textContent.items.map((item, index) => {
@@ -180,6 +181,8 @@ const GuidedPresentationWithZoom = () => {
       };
     });
     
+    console.log('📊 Extracted ' + htmlElements.length + ' text elements from PDF');
+    
     return {
       html: htmlElements,
       viewport: viewport,
@@ -190,8 +193,6 @@ const GuidedPresentationWithZoom = () => {
 
   // Parse HTML elements and extract text with coordinates
   const parseHTMLElements = (htmlData) => {
-    console.log('📄 PARSING HTML ELEMENTS:');
-    
     const elements = htmlData.html.map(element => ({
       id: element.id,
       x: element.x,
@@ -204,7 +205,7 @@ const GuidedPresentationWithZoom = () => {
       className: element.className
     }));
     
-    console.log(`Found ${elements.length} HTML elements`);
+    console.log('📊 Parsed ' + elements.length + ' elements for alignment');
     return elements;
   };
 
@@ -217,7 +218,7 @@ const GuidedPresentationWithZoom = () => {
       .trim();
   };
 
-  // Calculate similarity between two texts using fuzzy matching
+  // Calculate similarity between two texts using improved matching
   const calculateTextSimilarity = (text1, text2) => {
     const normalized1 = normalizeText(text1);
     const normalized2 = normalizeText(text2);
@@ -225,25 +226,39 @@ const GuidedPresentationWithZoom = () => {
     if (normalized1 === normalized2) return 1.0;
     if (normalized1.length === 0 || normalized2.length === 0) return 0;
     
-    if (normalized1.includes(normalized2) || normalized2.includes(normalized1)) {
-      return 0.9;
+    // Prioritize exact phrase matches
+    if (normalized1.includes(normalized2)) {
+      return 0.95; // Target text contains element text
+    }
+    if (normalized2.includes(normalized1)) {
+      return 0.9; // Element text contains target text
     }
     
+    // For longer target texts, require more word overlap
     const words1 = normalized1.split(' ').filter(w => w.length > 1);
     const words2 = normalized2.split(' ').filter(w => w.length > 1);
     
     if (words1.length === 0 || words2.length === 0) return 0;
     
+    // Calculate word overlap
     const intersection = words1.filter(word => words2.includes(word));
     const union = [...new Set([...words1, ...words2])];
-    
     const jaccard = intersection.length / union.length;
     
+    // Calculate containment score
     const shorter = words1.length < words2.length ? words1 : words2;
     const longer = words1.length >= words2.length ? words1 : words2;
     const containmentScore = shorter.filter(word => longer.includes(word)).length / shorter.length;
     
-    return Math.max(jaccard, containmentScore * 0.8);
+    // For longer target texts, require higher containment
+    const baseScore = Math.max(jaccard, containmentScore * 0.8);
+    
+    // Penalize very short matches for longer target texts
+    if (words1.length > 5 && words2.length < 3) {
+      return baseScore * 0.3; // Heavy penalty for short matches on long targets
+    }
+    
+    return baseScore;
   };
 
   // Merge nearby HTML elements into one bounding box
@@ -277,18 +292,14 @@ const GuidedPresentationWithZoom = () => {
       return [];
     }
 
+    console.log('🎯 Aligning ' + narrationSteps.length + ' steps with ' + htmlElements.length + ' elements');
+
     const alignedHighlights = [];
     const usedElementIds = new Set();
 
     narrationSteps.forEach((step, stepIndex) => {
       const stepText = step.highlightText || step.narrative || '';
       const normalizedStepText = normalizeText(stepText);
-      
-      console.log(`\n🔍 STEP ${stepIndex + 1} ALIGNMENT:`);
-      console.log(`GPT Step Number: ${step.stepNumber}`);
-      console.log(`Array Index: ${stepIndex}`);
-      console.log(`Final Step Number: ${step.stepNumber || (stepIndex + 1)}`);
-      console.log(`Highlight Text: "${stepText}"`);
       
       const availableElements = htmlElements.filter(element => !usedElementIds.has(element.id));
       
@@ -312,10 +323,21 @@ const GuidedPresentationWithZoom = () => {
 
       const bestMatch = elementScores[0];
       
-      if (bestMatch && 
+      // Log the top 3 matches for debugging
+      console.log('Step ' + (stepIndex + 1) + ' - Top 3 matches:');
+      elementScores.slice(0, 3).forEach((es, i) => {
+        console.log('  ' + (i + 1) + '. "' + es.element.text.substring(0, 40) + '" score: ' + es.similarity.toFixed(3) + 
+                   ' exact: ' + es.exactMatch + ' keywords: ' + es.keywordMatch);
+      });
+      
+      // Be more selective - require higher similarity for longer target texts
+      const minSimilarity = stepText.length > 20 ? 0.7 : 0.5;
+      const isGoodMatch = bestMatch && 
           bestMatch.element.text.trim().length > 0 &&
-          (bestMatch.similarity > 0.5 || bestMatch.exactMatch) &&
-          bestMatch.element.width > 0 && bestMatch.element.height > 0) {
+          (bestMatch.similarity > minSimilarity || bestMatch.exactMatch) &&
+          bestMatch.element.width > 0 && bestMatch.element.height > 0;
+      
+      if (isGoodMatch) {
         
         const similarElements = elementScores.filter(es => 
           es.element.text.trim().length > 0 &&
@@ -329,26 +351,80 @@ const GuidedPresentationWithZoom = () => {
         
         const mergedElement = mergeHTMLElements(elementsToMerge);
         if (mergedElement) {
-        const highlight = {
-          id: `highlight-${stepIndex}`,
-          step: step.stepNumber || (stepIndex + 1), // Use GPT's stepNumber if available
-          x: mergedElement.x,
-          y: mergedElement.y,
-          width: mergedElement.width,
-          height: mergedElement.height,
-          text: mergedElement.text,
-          narrationText: stepText,
-          narrative: step.narrative,
-          fontSize: mergedElement.fontSize,
-          fontFamily: mergedElement.fontFamily,
-          isMerged: mergedElement.isMerged,
-          elements: mergedElement.elements || [mergedElement]
-        };
-          
+          console.log('Step ' + (stepIndex + 1) + ': Found "' + mergedElement.text.substring(0, 30) + '" at (' + 
+                     mergedElement.x.toFixed(1) + ', ' + mergedElement.y.toFixed(1) + ') size ' + 
+                     mergedElement.width.toFixed(1) + 'x' + mergedElement.height.toFixed(1));
+
+          const highlight = {
+            id: `highlight-${stepIndex}`,
+            step: step.stepNumber || (stepIndex + 1), // Use GPT's stepNumber if available
+            x: mergedElement.x,
+            y: mergedElement.y,
+            width: mergedElement.width,
+            height: mergedElement.height,
+            text: mergedElement.text,
+            narrationText: stepText,
+            narrative: step.narrative,
+            fontSize: mergedElement.fontSize,
+            fontFamily: mergedElement.fontFamily,
+            isMerged: mergedElement.isMerged,
+            elements: mergedElement.elements || [mergedElement]
+          };
+            
           alignedHighlights.push(highlight);
           elementsToMerge.forEach(element => usedElementIds.add(element.id));
         }
       } else {
+        console.log('Step ' + (stepIndex + 1) + ': No good match found for "' + stepText.substring(0, 30) + '"');
+        
+        // Try to find a multi-word phrase by combining nearby elements
+        const targetWords = normalizedStepText.split(' ').filter(w => w.length > 2);
+        if (targetWords.length > 1) {
+          console.log('  Trying to find multi-word phrase...');
+          
+          // Look for elements that contain multiple target words
+          const phraseElements = availableElements.filter(element => {
+            const elementWords = normalizeText(element.text).split(' ').filter(w => w.length > 2);
+            const matchingWords = targetWords.filter(word => elementWords.includes(word));
+            return matchingWords.length >= Math.min(2, targetWords.length);
+          });
+          
+          if (phraseElements.length > 0) {
+            // Sort by number of matching words
+            phraseElements.sort((a, b) => {
+              const aWords = normalizeText(a.text).split(' ').filter(w => w.length > 2);
+              const bWords = normalizeText(b.text).split(' ').filter(w => w.length > 2);
+              const aMatches = targetWords.filter(word => aWords.includes(word)).length;
+              const bMatches = targetWords.filter(word => bWords.includes(word)).length;
+              return bMatches - aMatches;
+            });
+            
+            const bestPhraseMatch = phraseElements[0];
+            console.log('  Found phrase match: "' + bestPhraseMatch.text.substring(0, 40) + '"');
+            
+            const highlight = {
+              id: `highlight-${stepIndex}`,
+              step: step.stepNumber || (stepIndex + 1),
+              x: bestPhraseMatch.x,
+              y: bestPhraseMatch.y,
+              width: bestPhraseMatch.width,
+              height: bestPhraseMatch.height,
+              text: bestPhraseMatch.text,
+              narrationText: stepText,
+              narrative: step.narrative,
+              fontSize: bestPhraseMatch.fontSize,
+              fontFamily: bestPhraseMatch.fontFamily,
+              isMerged: false,
+              elements: [bestPhraseMatch]
+            };
+            
+            alignedHighlights.push(highlight);
+            usedElementIds.add(bestPhraseMatch.id);
+            return;
+          }
+        }
+        
+        // Fallback: create needs-review highlight
         const needsReviewHighlight = {
           id: `needs-review-${stepIndex}`,
           step: step.stepNumber || (stepIndex + 1), // Use GPT's stepNumber if available
@@ -369,6 +445,7 @@ const GuidedPresentationWithZoom = () => {
       }
     });
 
+    console.log('✅ Created ' + alignedHighlights.length + ' highlights');
     return alignedHighlights;
   };
 
@@ -448,6 +525,8 @@ const GuidedPresentationWithZoom = () => {
     const canvasWidth = viewport.width;
     const canvasHeight = viewport.height;
     
+    console.log('🎨 Generating HTML for ' + alignedHighlights.length + ' highlights on ' + canvasWidth + 'x' + canvasHeight + ' canvas');
+    
     // Extract EOB summary data
     const eobSummary = narrativeData?.eobSummary || {
       serviceDate: "Date not available",
@@ -482,7 +561,7 @@ const GuidedPresentationWithZoom = () => {
             text: step.text
           };
         } catch (error) {
-          console.error('🎵 Error converting audio to base64:', error);
+          console.error('Error converting audio to base64:', error);
           return {
             stepNumber: step.stepNumber,
             audioData: null,
@@ -499,8 +578,16 @@ const GuidedPresentationWithZoom = () => {
       };
     }) : [];
     
-    const scaleX = canvasWidth / viewport.width;
-    const scaleY = canvasHeight / viewport.height;
+    // Since we're using the same viewport for both coordinate extraction and rendering,
+    // the scale factors should be 1.0 (no scaling needed)
+    const scaleX = 1.0; // canvasWidth / viewport.width; // Should be 1.0
+    const scaleY = 1.0; // canvasHeight / viewport.height; // Should be 1.0
+    
+    console.log('📐 Scale factors: ' + scaleX + 'x' + scaleY + ' (no scaling needed)');
+    console.log('📊 Final highlight coordinates:');
+    alignedHighlights.forEach((h, i) => {
+      console.log('  Step ' + h.step + ': (' + h.x.toFixed(1) + ', ' + h.y.toFixed(1) + ') size ' + h.width.toFixed(1) + 'x' + h.height.toFixed(1));
+    });
     
     return `
 <!DOCTYPE html>
@@ -1498,12 +1585,36 @@ const GuidedPresentationWithZoom = () => {
                 <div class="highlight-overlay" id="highlightOverlay">
                  ${alignedHighlights.map((highlight, index) => {
                      // Scale coordinates to match the PDF display size
-                     const x = highlight.x * scaleX;
-                     const y = highlight.y * scaleY;
-                     const width = highlight.width * scaleX;
-                     const height = highlight.height * scaleY;
+                     let x = highlight.x * scaleX;
+                     let y = highlight.y * scaleY;
+                     let width = highlight.width * scaleX;
+                     let height = highlight.height * scaleY;
                      const stepNumber = highlight.step;
                      const needsReview = highlight.needsReview ? 'needs-review' : '';
+                     
+                     // Enforce minimum size for visibility (unless it's a needs-review highlight)
+                     if (!needsReview) {
+                         const minWidth = 20;
+                         const minHeight = 15;
+                         
+                         if (width < minWidth) {
+                             const centerX = x + width / 2;
+                             x = centerX - minWidth / 2;
+                             width = minWidth;
+                         }
+                         
+                         if (height < minHeight) {
+                             const centerY = y + height / 2;
+                             y = centerY - minHeight / 2;
+                             height = minHeight;
+                         }
+                     }
+                     
+                     // Only log if there's a significant change from minimum size enforcement
+                     if (width !== highlight.width || height !== highlight.height) {
+                       console.log('Step ' + stepNumber + ': Expanded from ' + highlight.width.toFixed(1) + 'x' + highlight.height.toFixed(1) + 
+                                  ' to ' + width.toFixed(1) + 'x' + height.toFixed(1));
+                     }
                      
                      return `
                          <div class="highlight-element ${needsReview}" id="highlight-${stepNumber - 1}" data-step="${stepNumber - 1}" style="left: ${x}px; top: ${y}px; width: ${width}px; height: ${height}px;">
@@ -2013,12 +2124,50 @@ const GuidedPresentationWithZoom = () => {
             }
         }
         
+        // Debug function to log highlight positions
+        function logHighlightPositions() {
+            const container = document.getElementById('pdfContainer');
+            const background = document.querySelector('.pdf-background');
+            const highlights = document.querySelectorAll('.highlight-element');
+            
+            console.log('🔍 RENDERED POSITIONS:');
+            console.log('Container: ' + container.offsetWidth + 'x' + container.offsetHeight + 
+                       ', Background: ' + background.offsetWidth + 'x' + background.offsetHeight);
+            
+            highlights.forEach((el, index) => {
+                const rect = el.getBoundingClientRect();
+                const containerRect = container.getBoundingClientRect();
+                const relativeLeft = rect.left - containerRect.left;
+                const relativeTop = rect.top - containerRect.top;
+                
+                console.log('Step ' + el.getAttribute('data-step') + ': CSS(' + el.style.left + ',' + el.style.top + 
+                           ') Actual(' + relativeLeft.toFixed(1) + ',' + relativeTop.toFixed(1) + 
+                           ') Size(' + rect.width.toFixed(1) + 'x' + rect.height.toFixed(1) + 
+                           ') Visible:' + (rect.width > 0 && rect.height > 0 ? 'YES' : 'NO'));
+            });
+            
+            const smallHighlights = Array.from(highlights).filter(el => {
+                const rect = el.getBoundingClientRect();
+                return rect.width < 20 || rect.height < 15;
+            });
+            
+            if (smallHighlights.length > 0) {
+                console.warn('⚠️ ' + smallHighlights.length + ' highlights too small (< 20x15px)');
+            }
+        }
+        
         // Initialize with YouTube-style behavior
         updateStep(0);
         updatePlayButton();
         updateSubtitle();
         initializeZoom();
         initializeEOBToggle();
+        
+        // Log highlight positions after a short delay to ensure rendering is complete
+        setTimeout(() => {
+            console.log('📊 SUMMARY: ' + alignedHighlights.length + ' highlights on ' + viewport.width + 'x' + viewport.height + ' canvas');
+            logHighlightPositions();
+        }, 1000);
         
         // Hide video controls initially, show center play button
         const videoControls = document.querySelector('.video-controls');
@@ -2075,6 +2224,12 @@ const GuidedPresentationWithZoom = () => {
                         zoomToFit();
                         break;
                 }
+            }
+            
+            // Debug shortcut: Ctrl+D to log highlight positions
+            if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+                e.preventDefault();
+                logHighlightPositions();
             }
         });
     </script>
